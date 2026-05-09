@@ -241,7 +241,8 @@ select {
   align-content: center;
   gap: 2px;
   width: 86px;
-  min-height: 48px;
+  height: 100%;
+  min-height: 0;
 }
 
 .token {

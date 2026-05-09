@@ -138,6 +138,8 @@ function renderBoard() {
     const outerEnd = growFromFace(track, end, track.thickness);
     const label = growFromFace(track, mid, track.labelOffset);
     const token = growFromFace(track, mid, track.tokenOffset);
+    const tokenHostHeight = 76;
+    const tokenHostYOffset = tokenYOffset(mid, tokenHostHeight);
     const type = space.type === "save-reverse" ? "reverse save-reverse" : space.type;
 
     const group = createSvgElement("g");
@@ -163,9 +165,9 @@ function renderBoard() {
     const tokenHost = createSvgElement("foreignObject");
     tokenHost.classList.add("tokens-host");
     tokenHost.setAttribute("x", token.x - 43);
-    tokenHost.setAttribute("y", token.y - 24);
+    tokenHost.setAttribute("y", token.y - tokenHostYOffset);
     tokenHost.setAttribute("width", 86);
-    tokenHost.setAttribute("height", 48);
+    tokenHost.setAttribute("height", tokenHostHeight);
     const tokens = document.createElement("div");
     tokens.className = "tokens";
     tokens.setAttribute("aria-hidden", "true");
@@ -307,6 +309,11 @@ function growFromFace(track, degrees, amount) {
     x: roundPoint(point.x + dx / distance * amount),
     y: roundPoint(point.y + dy / distance * amount)
   };
+}
+
+function tokenYOffset(degrees, hostHeight) {
+  const bottomness = Math.max(0, Math.sin(degrees * Math.PI / 180));
+  return hostHeight / 2 + bottomness * 28;
 }
 
 function trackPoint(curve, degrees) {
