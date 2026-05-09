@@ -153,11 +153,11 @@ select {
 .board {
   position: relative;
   width: 100%;
-  min-height: min(74vh, 720px);
+  min-height: min(74vh, 760px);
   aspect-ratio: 1.42;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 48%, rgba(216, 163, 123, 0.34) 0 34%, transparent 34.4%),
+    radial-gradient(ellipse at 50% 56%, rgba(216, 163, 123, 0.34) 0 37%, transparent 37.4%),
     linear-gradient(180deg, #fffdf7, var(--paper-strong));
   border: 3px solid var(--line);
 }
@@ -168,23 +168,24 @@ select {
 }
 
 .space {
-  --tile: clamp(54px, 7vw, 94px);
+  --tile: clamp(46px, 5.1vw, 70px);
   position: absolute;
   left: calc(var(--x) * 1%);
   top: calc(var(--y) * 1%);
   width: var(--tile);
-  height: calc(var(--tile) * 0.74);
+  height: var(--tile);
   display: flex;
   align-items: center;
   justify-content: center;
-  transform: translate(-50%, -50%) rotate(var(--r));
+  transform: translate(-50%, -50%);
   border: 2px solid var(--line);
   background: #fffaf1;
   text-align: center;
-  font-size: clamp(0.58rem, 1vw, 0.82rem);
+  font-size: clamp(0.52rem, 0.86vw, 0.74rem);
   font-weight: 800;
   line-height: 1.05;
   padding: 5px;
+  box-shadow: 2px 2px 0 rgba(42, 37, 33, 0.13);
 }
 
 .space.start,
@@ -206,6 +207,16 @@ select {
 
 .space.reverse {
   background: #dfedf2;
+}
+
+.space.save-reverse {
+  background: #dfedf2;
+  border-style: double;
+  border-width: 4px;
+}
+
+.space.plain {
+  background: #fffaf1;
 }
 
 .space.active {
@@ -245,80 +256,166 @@ select {
 
 .capy-center {
   position: absolute;
-  inset: 18% 22% 10%;
-  pointer-events: none;
+  inset: 13% 19% 8%;
 }
 
 .capy-face {
   position: absolute;
-  inset: 13% 0 0;
-  border: 3px solid var(--line);
-  border-radius: 48% 52% 36% 36%;
+  inset: 17% 2% 0;
+  border: 4px solid var(--line);
+  border-radius: 48% 52% 42% 42% / 56% 56% 36% 36%;
   background:
-    repeating-linear-gradient(100deg, rgba(116, 69, 37, 0.14) 0 6px, transparent 6px 13px),
+    radial-gradient(circle at 28% 47%, rgba(255, 240, 216, 0.25) 0 8%, transparent 8.5%),
+    radial-gradient(circle at 72% 47%, rgba(255, 240, 216, 0.25) 0 8%, transparent 8.5%),
+    repeating-linear-gradient(103deg, rgba(116, 69, 37, 0.12) 0 6px, transparent 6px 15px),
     var(--capy-light);
+  box-shadow: inset 0 -18px 0 rgba(93, 56, 33, 0.08);
 }
 
 .capy-ear {
   position: absolute;
-  top: 2%;
-  width: 22%;
-  height: 24%;
+  top: 3%;
+  width: 28%;
+  height: 28%;
   border: 3px solid var(--line);
-  background: var(--capy);
+  background:
+    radial-gradient(circle at 50% 54%, rgba(255, 250, 241, 0.42) 0 41%, transparent 42%),
+    var(--capy);
   z-index: 1;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 4px;
+  padding: 10px;
+  text-align: center;
 }
 
 .capy-ear-left {
-  left: 16%;
+  left: 8%;
   transform: rotate(-12deg);
-  border-radius: 60% 50% 40% 70%;
+  border-radius: 58% 48% 44% 70%;
 }
 
 .capy-ear-right {
-  right: 16%;
+  right: 8%;
   transform: rotate(12deg);
   border-radius: 50% 60% 70% 40%;
 }
 
+.capy-ear p {
+  margin: 0;
+  font-size: clamp(0.58rem, 1.2vw, 0.9rem);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.ear-characters {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 3px;
+  max-width: 92px;
+}
+
+.ear-token {
+  width: 23px;
+  height: 23px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.ear-token.capys {
+  background: var(--capy);
+}
+
+.ear-token.pelicans,
+.ear-token.unassigned {
+  background: var(--pelican);
+}
+
+.ear-token.unassigned {
+  background: var(--muted);
+}
+
+.mystery-ear {
+  width: 44px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--line);
+  background: #fffaf1;
+  box-shadow: 4px 4px 0 #f1cfb8, 7px 7px 0 rgba(42, 37, 33, 0.2);
+  font-size: 1.6rem;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+}
+
+.mystery-ear small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.46rem;
+  line-height: 1.1;
+  margin-top: 3px;
+}
+
 .capy-eye {
   position: absolute;
-  top: 43%;
-  width: 20px;
-  height: 30px;
-  border: 3px solid var(--line);
+  top: 38%;
+  width: 24px;
+  height: 31px;
+  border: 2px solid var(--line);
   border-radius: 50%;
   background: #221b17;
 }
 
+.capy-eye::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 5px;
+  width: 6px;
+  height: 8px;
+  border-radius: 50%;
+  background: white;
+}
+
 .capy-eye.left {
-  left: 28%;
+  left: 30%;
 }
 
 .capy-eye.right {
-  right: 28%;
+  right: 30%;
 }
 
 .capy-nose {
   position: absolute;
   left: 50%;
-  top: 63%;
-  width: 78px;
-  height: 56px;
+  top: 56%;
+  width: 108px;
+  height: 76px;
   transform: translateX(-50%);
   border: 3px solid var(--line);
-  border-radius: 48%;
-  background: #f2e1cf;
+  border-radius: 48% 48% 42% 42%;
+  background:
+    radial-gradient(ellipse at 50% 35%, #37271f 0 18%, transparent 19%),
+    #f2e1cf;
 }
 
 .capy-mouth {
   position: absolute;
   left: 50%;
-  top: 73%;
-  width: 62px;
-  height: 30px;
+  top: 69%;
+  width: 82px;
+  height: 38px;
   transform: translateX(-50%);
-  border-bottom: 3px solid var(--line);
+  border-bottom: 4px solid var(--line);
   border-radius: 50%;
 }
 
@@ -329,6 +426,7 @@ select {
 }
 
 .turn-card,
+.power-card,
 .scoreboard,
 .event-log {
   border: 3px solid var(--line);
@@ -339,6 +437,12 @@ select {
 .turn-card h2 {
   margin: 0 0 6px;
   font-size: 1.7rem;
+}
+
+.turn-help,
+#power-status {
+  color: var(--muted);
+  line-height: 1.28;
 }
 
 .team-pill {
@@ -357,11 +461,26 @@ select {
   background: #d9e7f1;
 }
 
+.team-pill.unassigned {
+  background: #eee7dc;
+}
+
 .spinner {
   position: relative;
   width: min(230px, 100%);
   aspect-ratio: 1;
   margin: 4px auto 14px;
+}
+
+.board-spinner {
+  position: absolute;
+  left: 50%;
+  top: -2%;
+  z-index: 5;
+  width: clamp(92px, 13vw, 142px);
+  margin: 0;
+  transform: translateX(-50%);
+  --spinner-radius: clamp(32px, 4.7vw, 53px);
 }
 
 .spinner-wheel {
@@ -370,15 +489,16 @@ select {
   border: 3px solid var(--line);
   border-radius: 50%;
   background: conic-gradient(
-    #e9c8d2 0deg 60deg,
-    #f6efd9 60deg 120deg,
-    #dcebcf 120deg 180deg,
-    #dfedf2 180deg 240deg,
-    #f3d5a0 240deg 300deg,
-    #f1cfb8 300deg 360deg
+    #f1a340 0deg 60deg,
+    #f8bd61 60deg 120deg,
+    #ef8e2f 120deg 180deg,
+    #ffc878 180deg 240deg,
+    #e97e27 240deg 300deg,
+    #f7ad4e 300deg 360deg
   );
   transform: rotate(var(--spin, 0deg));
   transition: transform 720ms cubic-bezier(.22, .92, .25, 1);
+  box-shadow: inset -12px -16px 0 rgba(145, 68, 20, 0.16);
 }
 
 .spinner-wheel::before,
@@ -403,7 +523,7 @@ select {
   display: grid;
   place-items: center;
   font-weight: 900;
-  transform: rotate(calc((var(--i) - 1) * 60deg + 30deg)) translateY(-76px) rotate(calc(-1 * ((var(--i) - 1) * 60deg + 30deg)));
+  transform: rotate(calc((var(--i) - 1) * 60deg + 30deg)) translateY(calc(var(--spinner-radius, 76px) * -1)) rotate(calc(-1 * ((var(--i) - 1) * 60deg + 30deg)));
 }
 
 .spinner-wheel span:nth-child(1) { --i: 1; }
@@ -416,7 +536,7 @@ select {
 .spinner-pointer {
   position: absolute;
   left: 50%;
-  top: -8px;
+  top: -7px;
   width: 0;
   height: 0;
   transform: translateX(-50%);
@@ -424,6 +544,28 @@ select {
   border-right: 14px solid transparent;
   border-top: 28px solid var(--line);
   z-index: 2;
+}
+
+.spinner-leaf {
+  position: absolute;
+  top: -12px;
+  width: 24px;
+  height: 14px;
+  border: 2px solid var(--line);
+  background: var(--grass);
+  z-index: 1;
+}
+
+.leaf-left {
+  left: 37%;
+  border-radius: 80% 0 80% 0;
+  transform: rotate(-22deg);
+}
+
+.leaf-right {
+  right: 35%;
+  border-radius: 0 80% 0 80%;
+  transform: rotate(28deg);
 }
 
 .primary-action,
@@ -440,6 +582,12 @@ select {
 
 .secondary-action {
   background: #d9e7f1;
+}
+
+.power-card .secondary-action {
+  min-height: 42px;
+  margin-top: 7px;
+  font-size: 0.9rem;
 }
 
 .team-row,
@@ -579,7 +727,7 @@ select {
   }
 
   .space {
-    --tile: clamp(48px, 14vw, 64px);
+    --tile: clamp(40px, 12vw, 52px);
   }
 
   .capy-center {
