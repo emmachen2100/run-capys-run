@@ -727,7 +727,7 @@ select {
   }
 
   .space {
-    --tile: clamp(40px, 12vw, 52px);
+    --tile: clamp(34px, 10.5vw, 44px);
   }
 
   .capy-center {

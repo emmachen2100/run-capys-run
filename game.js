@@ -114,17 +114,33 @@ function createGame() {
 function renderBoard() {
   spacesEl.innerHTML = "";
   const mobile = window.matchMedia("(max-width: 650px)").matches;
-  const cx = 50;
-  const cy = mobile ? 70 : 67;
-  const rx = mobile ? 38 : 43;
-  const ry = mobile ? 22 : 24;
-  const startAngle = mobile ? 225 : 224;
+  const pathPoints = mobile
+    ? [
+        { x: 28, y: 49 },
+        { x: 14, y: 62 },
+        { x: 10, y: 82 },
+        { x: 31, y: 92 },
+        { x: 50, y: 95 },
+        { x: 69, y: 92 },
+        { x: 90, y: 82 },
+        { x: 86, y: 62 },
+        { x: 72, y: 49 }
+      ]
+    : [
+        { x: 26, y: 43 },
+        { x: 13, y: 58 },
+        { x: 9, y: 78 },
+        { x: 28, y: 91 },
+        { x: 50, y: 95 },
+        { x: 72, y: 91 },
+        { x: 91, y: 78 },
+        { x: 87, y: 58 },
+        { x: 74, y: 43 }
+      ];
 
   boardSpaces.forEach((space, index) => {
-    const angle = startAngle - (index / boardSpaces.length) * 360;
-    const radians = angle * Math.PI / 180;
-    const x = cx + rx * Math.cos(radians);
-    const y = cy + ry * Math.sin(radians);
+    const progress = index / (boardSpaces.length - 1);
+    const { x, y } = pointAlongPath(pathPoints, progress);
     const el = document.createElement("div");
     const type = space.type === "save-reverse" ? "reverse save-reverse" : space.type;
     el.className = `space ${type}`;
@@ -134,6 +150,38 @@ function renderBoard() {
     el.innerHTML = `<span>${space.label}</span><div class="tokens" aria-hidden="true"></div>`;
     spacesEl.appendChild(el);
   });
+}
+
+function pointAlongPath(points, progress) {
+  const rect = boardEl.getBoundingClientRect();
+  const width = rect.width || 1000;
+  const height = rect.height || 700;
+  const segments = [];
+  let total = 0;
+
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const start = points[index];
+    const end = points[index + 1];
+    const dx = (end.x - start.x) * width / 100;
+    const dy = (end.y - start.y) * height / 100;
+    const length = Math.hypot(dx, dy);
+    segments.push({ start, end, length });
+    total += length;
+  }
+
+  let target = progress * total;
+  for (const segment of segments) {
+    if (target <= segment.length) {
+      const local = segment.length === 0 ? 0 : target / segment.length;
+      return {
+        x: segment.start.x + (segment.end.x - segment.start.x) * local,
+        y: segment.start.y + (segment.end.y - segment.start.y) * local
+      };
+    }
+    target -= segment.length;
+  }
+
+  return points[points.length - 1];
 }
 
 function updateUi() {
