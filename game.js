@@ -575,7 +575,13 @@ function raceSpin() {
 
 function spinWheel() {
   const result = 1 + Math.floor(Math.random() * 6);
-  state.spinRotation += 720 + (6 - result) * 60 + Math.floor(Math.random() * 18);
+  const segmentCenter = (result - 1) * 60 + 30;
+  const targetRotation = (360 - segmentCenter) % 360;
+  const currentRotation = ((state.spinRotation % 360) + 360) % 360;
+  const extraTurn = targetRotation >= currentRotation
+    ? targetRotation - currentRotation
+    : targetRotation + 360 - currentRotation;
+  state.spinRotation += 720 + extraTurn;
   wheelEl.style.setProperty("--spin", `${state.spinRotation}deg`);
   return result;
 }
