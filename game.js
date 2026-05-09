@@ -114,41 +114,18 @@ function createGame() {
 function renderBoard() {
   spacesEl.innerHTML = "";
   const mobile = window.matchMedia("(max-width: 650px)").matches;
-  const pathPoints = mobile
-    ? [
-        { x: 25, y: 45 },
-        { x: 14, y: 59 },
-        { x: 13, y: 78 },
-        { x: 31, y: 89 },
-        { x: 50, y: 92 },
-        { x: 69, y: 89 },
-        { x: 87, y: 78 },
-        { x: 86, y: 59 },
-        { x: 75, y: 45 }
-      ]
-    : [
-        { x: 24, y: 40 },
-        { x: 15, y: 55 },
-        { x: 14, y: 76 },
-        { x: 30, y: 88 },
-        { x: 50, y: 91 },
-        { x: 70, y: 88 },
-        { x: 86, y: 76 },
-        { x: 85, y: 55 },
-        { x: 76, y: 40 }
-      ];
   const rect = boardEl.getBoundingClientRect();
   const boardWidth = rect.width || 1000;
   const boardHeight = rect.height || 700;
-  const tileHeight = Math.round(Math.max(42, Math.min(mobile ? 50 : 62, boardWidth * (mobile ? 0.108 : 0.056))));
+  const tileHeight = Math.round(Math.max(42, Math.min(mobile ? 52 : 66, boardWidth * (mobile ? 0.112 : 0.062))));
 
   boardSpaces.forEach((space, index) => {
     const progress = index / (boardSpaces.length - 1);
-    const point = pointAlongPath(pathPoints, progress, boardWidth, boardHeight);
-    const before = pointAlongPath(pathPoints, Math.max(0, (index - 1) / (boardSpaces.length - 1)), boardWidth, boardHeight);
-    const after = pointAlongPath(pathPoints, Math.min(1, (index + 1) / (boardSpaces.length - 1)), boardWidth, boardHeight);
+    const point = pointOnCapyOutline(progress, mobile, boardWidth, boardHeight);
+    const before = pointOnCapyOutline(Math.max(0, (index - 1) / (boardSpaces.length - 1)), mobile, boardWidth, boardHeight);
+    const after = pointOnCapyOutline(Math.min(1, (index + 1) / (boardSpaces.length - 1)), mobile, boardWidth, boardHeight);
     const neighborDistance = Math.max(pixelDistance(point, before, boardWidth, boardHeight), pixelDistance(point, after, boardWidth, boardHeight));
-    const tileWidth = Math.round(Math.max(tileHeight * 0.96, Math.min(tileHeight * 1.65, neighborDistance + 8)));
+    const tileWidth = Math.round(Math.max(tileHeight * 1.05, Math.min(tileHeight * 1.8, neighborDistance + 18)));
     const el = document.createElement("div");
     const type = space.type === "save-reverse" ? "reverse save-reverse" : space.type;
     el.className = `space ${type}`;
@@ -158,44 +135,27 @@ function renderBoard() {
     el.style.setProperty("--text-r", `${(-point.angle).toFixed(2)}deg`);
     el.style.setProperty("--tile-w", `${tileWidth}px`);
     el.style.setProperty("--tile-h", `${tileHeight}px`);
+    el.style.setProperty("--depth", String(index + 1));
     el.dataset.index = index;
     el.innerHTML = `<span>${space.label}</span><div class="tokens" aria-hidden="true"></div>`;
     spacesEl.appendChild(el);
   });
 }
 
-function pointAlongPath(points, progress, width, height) {
-  const segments = [];
-  let total = 0;
-
-  for (let index = 0; index < points.length - 1; index += 1) {
-    const start = points[index];
-    const end = points[index + 1];
-    const dx = (end.x - start.x) * width / 100;
-    const dy = (end.y - start.y) * height / 100;
-    const length = Math.hypot(dx, dy);
-    segments.push({ start, end, length });
-    total += length;
-  }
-
-  let target = progress * total;
-  for (const segment of segments) {
-    if (target <= segment.length) {
-      const local = segment.length === 0 ? 0 : target / segment.length;
-      return {
-        x: segment.start.x + (segment.end.x - segment.start.x) * local,
-        y: segment.start.y + (segment.end.y - segment.start.y) * local,
-        angle: Math.atan2((segment.end.y - segment.start.y) * height, (segment.end.x - segment.start.x) * width) * 180 / Math.PI
-      };
-    }
-    target -= segment.length;
-  }
-
-  const last = points[points.length - 1];
-  const previous = points[points.length - 2];
+function pointOnCapyOutline(progress, mobile, width, height) {
+  const outline = mobile
+    ? { cx: 50, cy: 65, rx: 38.5, ry: 30, start: 221, end: -41 }
+    : { cx: 50, cy: 64, rx: 39.5, ry: 31, start: 219, end: -39 };
+  const degrees = outline.start + (outline.end - outline.start) * progress;
+  const radians = degrees * Math.PI / 180;
+  const x = outline.cx + outline.rx * Math.cos(radians);
+  const y = outline.cy + outline.ry * Math.sin(radians);
+  const tangentX = -outline.rx * Math.sin(radians) * width;
+  const tangentY = outline.ry * Math.cos(radians) * height;
   return {
-    ...last,
-    angle: Math.atan2((last.y - previous.y) * height, (last.x - previous.x) * width) * 180 / Math.PI
+    x,
+    y,
+    angle: Math.atan2(tangentY, tangentX) * 180 / Math.PI
   };
 }
 
