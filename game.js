@@ -23,36 +23,36 @@ const MOVE_STEP_MS = 240;
 
 const boardSpaces = [
   { label: "Start", type: "start" },
-  { label: "+3", type: "points", points: 3 },
-  { label: "Mystery", type: "mystery" },
-  { label: "", type: "plain" },
-  { label: "Go up 2", type: "move", move: 2 },
-  { label: "+5", type: "points", points: 5 },
-  { label: "", type: "plain" },
-  { label: "Mystery", type: "mystery" },
-  { label: "Save reverse", type: "save-reverse", saveReverse: true },
-  { label: "-2", type: "points", points: -2 },
-  { label: "Spin again", type: "move", spinAgain: true },
-  { label: "Mystery", type: "mystery" },
-  { label: "", type: "plain" },
-  { label: "+4", type: "points", points: 4 },
-  { label: "Go back 2", type: "move", move: -2 },
-  { label: "", type: "plain" },
-  { label: "Reverse", type: "reverse", reverseNow: true },
-  { label: "+6", type: "points", points: 6 },
-  { label: "Mystery", type: "mystery" },
-  { label: "Skip next", type: "move", skipNext: true },
-  { label: "+7", type: "points", points: 7 },
-  { label: "", type: "plain" },
-  { label: "Mystery", type: "mystery" },
   { label: "Go back 1", type: "move", move: -1 },
+  { label: "", type: "plain" },
+  { label: "+3 points", type: "points", points: 3 },
+  { label: "Mystery card", type: "mystery" },
+  { label: "", type: "plain" },
+  { label: "Spin again", type: "move", spinAgain: true },
+  { label: "Mystery card", type: "mystery" },
+  { label: "", type: "plain" },
+  { label: "+3 points", type: "points", points: 3 },
+  { label: "", type: "plain" },
+  { label: "Go up 3 spaces", type: "move", move: 3 },
+  { label: "Mystery card", type: "mystery" },
+  { label: "", type: "plain" },
+  { label: "+7 points", type: "points", points: 7 },
+  { label: "Mystery card", type: "mystery" },
+  { label: "", type: "plain" },
+  { label: "", type: "plain" },
+  { label: "-5 points\nspin\nagain", type: "points", points: -5, spinAgain: true },
+  { label: "", type: "plain" },
+  { label: "", type: "plain" },
+  { label: "Mystery card", type: "mystery" },
+  { label: "+2 points", type: "points", points: 2 },
+  { label: "", type: "plain" },
   { label: "Finish", type: "finish" }
 ];
 
 const cardBlueprints = [
   ...repeatCard(3, { title: "Move forward", text: "Move forward 3 spaces.", apply: async (game, player) => movePlayer(game, player, 3, "card") }),
   ...repeatCard(3, { title: "Move backward", text: "Move backward 3 spaces.", apply: async (game, player) => movePlayer(game, player, -3, "card") }),
-  ...repeatCard(3, { title: "Reverse", text: "Reverse the play order.", apply: (game) => { game.direction *= -1; addLog("Play order reversed."); } }),
+  ...repeatCard(3, { title: "Reverse", text: "Save this reverse card for later.", apply: (game, player) => { player.savedReverse = true; addLog(`${player.name} saved a reverse card.`); } }),
   ...repeatCard(3, { title: "Back to start", text: "Go back to start.", apply: async (game, player) => movePlayerTo(game, player, 0, "card") }),
   ...repeatCard(7, { title: "+ points", text: "Add 5 points to your team.", apply: (game, player) => addPoints(game, player.team, 5) }),
   ...repeatCard(4, { title: "- points", text: "Lose 4 points from your team.", apply: (game, player) => addPoints(game, player.team, -4) }),
@@ -262,6 +262,18 @@ function faceShapePath(track) {
 
 function appendSpaceLabel(textEl, label) {
   if (!label) return;
+  if (label.includes("\n")) {
+    const lines = label.split("\n");
+    lines.forEach((lineText, index) => {
+      const line = createSvgElement("tspan");
+      line.setAttribute("x", textEl.getAttribute("x"));
+      line.setAttribute("dy", index === 0 ? `${(1 - lines.length) * 0.55}em` : "1.1em");
+      line.textContent = lineText;
+      textEl.appendChild(line);
+    });
+    return;
+  }
+
   const words = label.split(" ");
   if (words.length === 1 || label.length <= 8) {
     textEl.textContent = label;
