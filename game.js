@@ -19,6 +19,8 @@ const powerStatusEl = document.querySelector("#power-status");
 const powerUpButton = document.querySelector("#power-up");
 const powerDownButton = document.querySelector("#power-down");
 
+const MOVE_STEP_MS = 240;
+
 const boardSpaces = [
   { label: "Start", type: "start" },
   { label: "+3", type: "points", points: 3 },
@@ -48,17 +50,17 @@ const boardSpaces = [
 ];
 
 const cardBlueprints = [
-  ...repeatCard(3, { title: "Move forward", text: "Move forward 3 spaces.", apply: (game, player) => movePlayer(game, player, 3, "card") }),
-  ...repeatCard(3, { title: "Move backward", text: "Move backward 3 spaces.", apply: (game, player) => movePlayer(game, player, -3, "card") }),
+  ...repeatCard(3, { title: "Move forward", text: "Move forward 3 spaces.", apply: async (game, player) => movePlayer(game, player, 3, "card") }),
+  ...repeatCard(3, { title: "Move backward", text: "Move backward 3 spaces.", apply: async (game, player) => movePlayer(game, player, -3, "card") }),
   ...repeatCard(3, { title: "Reverse", text: "Reverse the play order.", apply: (game) => { game.direction *= -1; addLog("Play order reversed."); } }),
-  ...repeatCard(3, { title: "Back to start", text: "Go back to start.", apply: (game, player) => { player.position = 0; addLog(`${player.name} went back to start.`); } }),
+  ...repeatCard(3, { title: "Back to start", text: "Go back to start.", apply: async (game, player) => movePlayerTo(game, player, 0, "card") }),
   ...repeatCard(7, { title: "+ points", text: "Add 5 points to your team.", apply: (game, player) => addPoints(game, player.team, 5) }),
   ...repeatCard(4, { title: "- points", text: "Lose 4 points from your team.", apply: (game, player) => addPoints(game, player.team, -4) }),
   { title: "Skip turn", text: "The next player skips a turn.", apply: (game) => { const next = nextLivingPlayer(game); next.skip = true; addLog(`${next.name} will skip a turn.`); } },
-  ...repeatCard(3, { title: "Oops card", text: "Slide back to the last mystery card.", apply: (game, player) => moveToPreviousMystery(game, player) }),
+  ...repeatCard(3, { title: "Oops card", text: "Slide back to the last mystery card.", apply: async (game, player) => moveToPreviousMystery(game, player) }),
   ...repeatCard(2, { title: "Switch points", text: "Switch team scores.", apply: switchPoints }),
   { title: "Double points", text: "Double your team's points.", apply: (game, player) => { game.teams[player.team].score *= 2; addLog(`${teamLabel(player.team)} doubled its points.`); } },
-  { title: "Pick 2 more cards", text: "Draw two more mystery cards.", apply: (game, player) => { drawMystery(game, player, true); drawMystery(game, player, true); } },
+  { title: "Pick 2 more cards", text: "Draw two more mystery cards.", apply: async (game, player) => { await drawMystery(game, player, true); await drawMystery(game, player, true); } },
   { title: "Switch places", text: "Switch places with another player.", apply: switchPlacesWithLeader }
 ];
 
@@ -452,6 +454,10 @@ function wrap(value, length) {
   return ((value % length) + length) % length;
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function spin() {
   if (state.phase === "setup") {
     setupSpin();
@@ -527,9 +533,9 @@ function raceSpin() {
   const result = spinWheel();
   addLog(`${player.name} spun ${result}.`);
 
-  setTimeout(() => {
-    movePlayer(state, player, result, "spin");
-    const keepsTurn = resolveSpace(state, player);
+  setTimeout(async () => {
+    await movePlayer(state, player, result, "spin");
+    const keepsTurn = await resolveSpace(state, player);
     if (!state.over && !keepsTurn) endTurn();
   }, 760);
 }
@@ -541,23 +547,59 @@ function spinWheel() {
   return result;
 }
 
-function movePlayer(game, player, amount, source) {
+async function movePlayer(game, player, amount, source) {
   if (player.finished) return;
   const finish = boardSpaces.length - 1;
-  const next = player.position + amount;
-  player.position = Math.max(0, Math.min(finish, next));
+  const start = player.position;
+  const path = movementPath(start, amount, finish);
+  const bounced = amount > 0 && start + amount > finish;
+
+  for (const position of path) {
+    player.position = position;
+    updateUi();
+    await sleep(MOVE_STEP_MS);
+  }
+
   if (player.position === finish) {
     player.finished = true;
     addLog(`${player.name} reached the finish.`);
     checkWinner(game);
     return;
   }
-  if (source === "card" || source === "power") {
+  if (bounced) {
+    addLog(`${player.name} bounced back to space ${player.position + 1}.`);
+  } else if (source === "card" || source === "power") {
     addLog(`${player.name} moved to space ${player.position + 1}.`);
   }
 }
 
-function resolveSpace(game, player) {
+async function movePlayerTo(game, player, target, source) {
+  const finish = boardSpaces.length - 1;
+  const destination = Math.max(0, Math.min(finish, target));
+  await movePlayer(game, player, destination - player.position, source);
+}
+
+function movementPath(start, amount, finish) {
+  const path = [];
+  let position = start;
+
+  if (amount > 0) {
+    for (let step = 0; step < amount; step += 1) {
+      position = position >= finish ? position - 1 : position + 1;
+      path.push(position);
+    }
+    return path;
+  }
+
+  const destination = Math.max(0, start + amount);
+  while (position > destination) {
+    position -= 1;
+    path.push(position);
+  }
+  return path;
+}
+
+async function resolveSpace(game, player) {
   if (player.finished || game.over) return false;
   const space = boardSpaces[player.position];
 
@@ -578,9 +620,9 @@ function resolveSpace(game, player) {
   if (space.switchPlaces) switchPlacesWithLeader(game, player);
   if (space.move) {
     addLog(`${space.label}.`);
-    movePlayer(game, player, space.move, "space");
+    await movePlayer(game, player, space.move, "space");
   }
-  if (space.mystery) drawMystery(game, player);
+  if (space.mystery) await drawMystery(game, player);
   if (space.spinAgain && !game.over) {
     addLog(`${player.name} gets an extra spin.`);
     game.busy = false;
@@ -590,7 +632,7 @@ function resolveSpace(game, player) {
   return false;
 }
 
-function drawMystery(game, player, chained = false) {
+async function drawMystery(game, player, chained = false) {
   if (game.deck.length === 0) {
     game.deck = shuffle(game.discard);
     game.discard = [];
@@ -601,11 +643,11 @@ function drawMystery(game, player, chained = false) {
   game.lastCard = card;
   game.discard.push(card);
   addLog(`${player.name} drew ${card.title}: ${card.text}`);
-  card.apply(game, player);
+  await card.apply(game, player);
 
   if (!chained && !game.over) {
     const space = boardSpaces[player.position];
-    if (!space.mystery && !player.finished) resolveSpace(game, player);
+    if (!space.mystery && !player.finished) await resolveSpace(game, player);
   }
 }
 
@@ -630,25 +672,29 @@ function spendPower(team) {
   state.teams[team].spentPowers += 1;
 }
 
-function usePowerUp() {
+async function usePowerUp() {
   if (state.phase !== "race" || state.busy || state.over) return;
   const player = currentPlayer();
   if (availablePowers(player.team) <= 0) return;
+  state.busy = true;
   spendPower(player.team);
   addLog(`${teamLabel(player.team)} used 15 points to move ${player.name} up 5.`);
-  movePlayer(state, player, 5, "power");
+  await movePlayer(state, player, 5, "power");
+  state.busy = false;
   updateUi();
 }
 
-function usePowerDown() {
+async function usePowerDown() {
   if (state.phase !== "race" || state.busy || state.over) return;
   const player = currentPlayer();
   if (availablePowers(player.team) <= 0) return;
   const opponent = mostAdvancedOpponent(player.team);
   if (!opponent) return;
+  state.busy = true;
   spendPower(player.team);
   addLog(`${teamLabel(player.team)} used 15 points to move ${opponent.name} down 5.`);
-  movePlayer(state, opponent, -5, "power");
+  await movePlayer(state, opponent, -5, "power");
+  state.busy = false;
   updateUi();
 }
 
@@ -671,17 +717,18 @@ function switchPlacesWithLeader(game, player) {
   const other = candidates.reduce((leader, next) => next.position > leader.position ? next : leader, candidates[0]);
   [player.position, other.position] = [other.position, player.position];
   addLog(`${player.name} switched places with ${other.name}.`);
+  updateUi();
 }
 
-function moveToPreviousMystery(game, player) {
+async function moveToPreviousMystery(game, player) {
   for (let index = player.position - 1; index >= 0; index -= 1) {
     if (boardSpaces[index].type === "mystery") {
-      player.position = index;
+      await movePlayerTo(game, player, index, "card");
       addLog(`${player.name} slid back to a mystery card.`);
       return;
     }
   }
-  player.position = 0;
+  await movePlayerTo(game, player, 0, "card");
   addLog(`${player.name} slid back to start.`);
 }
 
@@ -709,15 +756,14 @@ function endTurn() {
 }
 
 function checkWinner(game) {
-  const playerCount = game.players.length;
-  const needed = playerCount === 4 ? 2 : 1;
   const winner = ["capys", "pelicans"].find((team) => {
-    return game.players.filter((player) => player.team === team && player.finished).length >= needed;
+    return game.players.some((player) => player.team === team && player.finished);
   });
 
   if (!winner) return;
 
   game.over = true;
+  game.busy = false;
   const banner = document.createElement("div");
   banner.className = "winner-banner";
   banner.innerHTML = `<h2>${teamLabel(winner)} win</h2><p>Final score: Capys ${game.teams.capys.score}, Pelicans ${game.teams.pelicans.score}</p><button type="button" id="play-again">Play again</button>`;
