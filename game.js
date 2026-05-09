@@ -114,53 +114,115 @@ function createGame() {
 function renderBoard() {
   spacesEl.innerHTML = "";
   const mobile = window.matchMedia("(max-width: 650px)").matches;
-  const rect = boardEl.getBoundingClientRect();
-  const boardWidth = rect.width || 1000;
-  const boardHeight = rect.height || 700;
-  const tileHeight = Math.round(Math.max(42, Math.min(mobile ? 52 : 66, boardWidth * (mobile ? 0.112 : 0.062))));
+  const track = buildTrackGeometry(mobile);
+  const svg = createSvgElement("svg");
+  svg.classList.add("track-svg");
+  svg.setAttribute("viewBox", "0 0 1000 700");
+  svg.setAttribute("preserveAspectRatio", "none");
+  spacesEl.appendChild(svg);
 
   boardSpaces.forEach((space, index) => {
-    const progress = index / (boardSpaces.length - 1);
-    const point = pointOnCapyOutline(progress, mobile, boardWidth, boardHeight);
-    const before = pointOnCapyOutline(Math.max(0, (index - 1) / (boardSpaces.length - 1)), mobile, boardWidth, boardHeight);
-    const after = pointOnCapyOutline(Math.min(1, (index + 1) / (boardSpaces.length - 1)), mobile, boardWidth, boardHeight);
-    const neighborDistance = Math.max(pixelDistance(point, before, boardWidth, boardHeight), pixelDistance(point, after, boardWidth, boardHeight));
-    const tileWidth = Math.round(Math.max(tileHeight * 1.05, Math.min(tileHeight * 1.8, neighborDistance + 18)));
-    const el = document.createElement("div");
+    const start = track.start + track.span * index / boardSpaces.length;
+    const end = track.start + track.span * (index + 1) / boardSpaces.length;
+    const mid = (start + end) / 2;
+    const innerStart = trackPoint(track.inner, start);
+    const innerMid = trackPoint(track.inner, mid);
+    const innerEnd = trackPoint(track.inner, end);
+    const outerStart = trackPoint(track.outer, start);
+    const outerMid = trackPoint(track.outer, mid);
+    const outerEnd = trackPoint(track.outer, end);
+    const label = trackPoint(track.label, mid);
+    const token = trackPoint(track.token, mid);
     const type = space.type === "save-reverse" ? "reverse save-reverse" : space.type;
-    el.className = `space ${type}`;
-    el.style.setProperty("--x", point.x.toFixed(2));
-    el.style.setProperty("--y", point.y.toFixed(2));
-    el.style.setProperty("--r", `${point.angle.toFixed(2)}deg`);
-    el.style.setProperty("--text-r", `${(-point.angle).toFixed(2)}deg`);
-    el.style.setProperty("--tile-w", `${tileWidth}px`);
-    el.style.setProperty("--tile-h", `${tileHeight}px`);
-    el.style.setProperty("--depth", String(index + 1));
-    el.dataset.index = index;
-    el.innerHTML = `<span>${space.label}</span><div class="tokens" aria-hidden="true"></div>`;
-    spacesEl.appendChild(el);
+
+    const group = createSvgElement("g");
+    group.classList.add("space", ...type.split(" "));
+    group.dataset.index = index;
+
+    const path = createSvgElement("path");
+    path.classList.add("space-path");
+    path.setAttribute("d", [
+      `M ${innerStart.x} ${innerStart.y}`,
+      `Q ${innerMid.x} ${innerMid.y} ${innerEnd.x} ${innerEnd.y}`,
+      `L ${outerEnd.x} ${outerEnd.y}`,
+      `Q ${outerMid.x} ${outerMid.y} ${outerStart.x} ${outerStart.y}`,
+      "Z"
+    ].join(" "));
+
+    const text = createSvgElement("text");
+    text.classList.add("space-label");
+    text.setAttribute("x", label.x);
+    text.setAttribute("y", label.y);
+    appendSpaceLabel(text, space.label);
+
+    const tokenHost = createSvgElement("foreignObject");
+    tokenHost.classList.add("tokens-host");
+    tokenHost.setAttribute("x", token.x - 25);
+    tokenHost.setAttribute("y", token.y - 14);
+    tokenHost.setAttribute("width", 50);
+    tokenHost.setAttribute("height", 28);
+    const tokens = document.createElement("div");
+    tokens.className = "tokens";
+    tokens.setAttribute("aria-hidden", "true");
+    tokenHost.appendChild(tokens);
+
+    group.append(path, text, tokenHost);
+    svg.appendChild(group);
   });
 }
 
-function pointOnCapyOutline(progress, mobile, width, height) {
-  const outline = mobile
-    ? { cx: 50, cy: 65, rx: 38.5, ry: 30, start: 221, end: -41 }
-    : { cx: 50, cy: 64, rx: 39.5, ry: 31, start: 219, end: -39 };
-  const degrees = outline.start + (outline.end - outline.start) * progress;
-  const radians = degrees * Math.PI / 180;
-  const x = outline.cx + outline.rx * Math.cos(radians);
-  const y = outline.cy + outline.ry * Math.sin(radians);
-  const tangentX = -outline.rx * Math.sin(radians) * width;
-  const tangentY = outline.ry * Math.cos(radians) * height;
+function buildTrackGeometry(mobile) {
   return {
-    x,
-    y,
-    angle: Math.atan2(tangentY, tangentX) * 180 / Math.PI
+    start: 219,
+    span: -258,
+    inner: mobile
+      ? { cx: 500, cy: 424, rx: 344, ry: 220, sidePinch: 52 }
+      : { cx: 500, cy: 416, rx: 354, ry: 228, sidePinch: 58 },
+    outer: mobile
+      ? { cx: 500, cy: 424, rx: 433, ry: 294, sidePinch: 10 }
+      : { cx: 500, cy: 416, rx: 449, ry: 304, sidePinch: 12 },
+    label: mobile
+      ? { cx: 500, cy: 424, rx: 387, ry: 256, sidePinch: 25 }
+      : { cx: 500, cy: 416, rx: 401, ry: 265, sidePinch: 30 },
+    token: mobile
+      ? { cx: 500, cy: 424, rx: 410, ry: 274, sidePinch: 16 }
+      : { cx: 500, cy: 416, rx: 426, ry: 287, sidePinch: 18 }
   };
 }
 
-function pixelDistance(first, second, width, height) {
-  return Math.hypot((first.x - second.x) * width / 100, (first.y - second.y) * height / 100);
+function createSvgElement(tagName) {
+  return document.createElementNS("http://www.w3.org/2000/svg", tagName);
+}
+
+function appendSpaceLabel(textEl, label) {
+  if (!label) return;
+  const words = label.split(" ");
+  if (words.length === 1 || label.length <= 8) {
+    textEl.textContent = label;
+    return;
+  }
+
+  words.forEach((word, index) => {
+    const line = createSvgElement("tspan");
+    line.setAttribute("x", textEl.getAttribute("x"));
+    line.setAttribute("dy", index === 0 ? `${(1 - words.length) * 0.55}em` : "1.1em");
+    line.textContent = word;
+    textEl.appendChild(line);
+  });
+}
+
+function trackPoint(curve, degrees) {
+  const radians = degrees * Math.PI / 180;
+  const sidePinch = (curve.sidePinch || 0) * Math.abs(Math.cos(radians)) ** 8;
+  const rx = curve.rx - sidePinch;
+  return {
+    x: roundPoint(curve.cx + rx * Math.cos(radians)),
+    y: roundPoint(curve.cy + curve.ry * Math.sin(radians))
+  };
+}
+
+function roundPoint(value) {
+  return Math.round(value * 100) / 100;
 }
 
 function updateUi() {
