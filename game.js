@@ -137,7 +137,7 @@ function renderBoard() {
     const outerMid = growFromFace(track, mid, track.thickness);
     const outerEnd = growFromFace(track, end, track.thickness);
     const label = growFromFace(track, mid, track.labelOffset);
-    const token = growFromFace(track, mid, track.tokenOffset);
+    const token = growFromFace(track, mid, tokenOffsetForAngle(track, mid));
     const tokenHostHeight = 76;
     const tokenHostYOffset = tokenYOffset(mid, tokenHostHeight);
     const type = space.type === "save-reverse" ? "reverse save-reverse" : space.type;
@@ -314,6 +314,13 @@ function growFromFace(track, degrees, amount) {
 function tokenYOffset(degrees, hostHeight) {
   const bottomness = Math.max(0, Math.sin(degrees * Math.PI / 180));
   return hostHeight / 2 + bottomness * 28;
+}
+
+function tokenOffsetForAngle(track, degrees) {
+  const radians = degrees * Math.PI / 180;
+  const sideness = Math.abs(Math.cos(radians));
+  const topness = Math.max(0, -Math.sin(radians));
+  return Math.max(38, track.tokenOffset - sideness * 28 - topness * 8);
 }
 
 function trackPoint(curve, degrees) {
