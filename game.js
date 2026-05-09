@@ -116,46 +116,55 @@ function renderBoard() {
   const mobile = window.matchMedia("(max-width: 650px)").matches;
   const pathPoints = mobile
     ? [
-        { x: 28, y: 49 },
-        { x: 14, y: 62 },
-        { x: 10, y: 82 },
-        { x: 31, y: 92 },
-        { x: 50, y: 95 },
-        { x: 69, y: 92 },
-        { x: 90, y: 82 },
-        { x: 86, y: 62 },
-        { x: 72, y: 49 }
+        { x: 25, y: 45 },
+        { x: 14, y: 59 },
+        { x: 13, y: 78 },
+        { x: 31, y: 89 },
+        { x: 50, y: 92 },
+        { x: 69, y: 89 },
+        { x: 87, y: 78 },
+        { x: 86, y: 59 },
+        { x: 75, y: 45 }
       ]
     : [
-        { x: 26, y: 43 },
-        { x: 13, y: 58 },
-        { x: 9, y: 78 },
-        { x: 28, y: 91 },
-        { x: 50, y: 95 },
-        { x: 72, y: 91 },
-        { x: 91, y: 78 },
-        { x: 87, y: 58 },
-        { x: 74, y: 43 }
+        { x: 24, y: 40 },
+        { x: 15, y: 55 },
+        { x: 14, y: 76 },
+        { x: 30, y: 88 },
+        { x: 50, y: 91 },
+        { x: 70, y: 88 },
+        { x: 86, y: 76 },
+        { x: 85, y: 55 },
+        { x: 76, y: 40 }
       ];
+  const rect = boardEl.getBoundingClientRect();
+  const boardWidth = rect.width || 1000;
+  const boardHeight = rect.height || 700;
+  const tileHeight = Math.round(Math.max(42, Math.min(mobile ? 50 : 62, boardWidth * (mobile ? 0.108 : 0.056))));
 
   boardSpaces.forEach((space, index) => {
     const progress = index / (boardSpaces.length - 1);
-    const { x, y } = pointAlongPath(pathPoints, progress);
+    const point = pointAlongPath(pathPoints, progress, boardWidth, boardHeight);
+    const before = pointAlongPath(pathPoints, Math.max(0, (index - 1) / (boardSpaces.length - 1)), boardWidth, boardHeight);
+    const after = pointAlongPath(pathPoints, Math.min(1, (index + 1) / (boardSpaces.length - 1)), boardWidth, boardHeight);
+    const neighborDistance = Math.max(pixelDistance(point, before, boardWidth, boardHeight), pixelDistance(point, after, boardWidth, boardHeight));
+    const tileWidth = Math.round(Math.max(tileHeight * 0.96, Math.min(tileHeight * 1.65, neighborDistance + 8)));
     const el = document.createElement("div");
     const type = space.type === "save-reverse" ? "reverse save-reverse" : space.type;
     el.className = `space ${type}`;
-    el.style.setProperty("--x", x.toFixed(2));
-    el.style.setProperty("--y", y.toFixed(2));
+    el.style.setProperty("--x", point.x.toFixed(2));
+    el.style.setProperty("--y", point.y.toFixed(2));
+    el.style.setProperty("--r", `${point.angle.toFixed(2)}deg`);
+    el.style.setProperty("--text-r", `${(-point.angle).toFixed(2)}deg`);
+    el.style.setProperty("--tile-w", `${tileWidth}px`);
+    el.style.setProperty("--tile-h", `${tileHeight}px`);
     el.dataset.index = index;
     el.innerHTML = `<span>${space.label}</span><div class="tokens" aria-hidden="true"></div>`;
     spacesEl.appendChild(el);
   });
 }
 
-function pointAlongPath(points, progress) {
-  const rect = boardEl.getBoundingClientRect();
-  const width = rect.width || 1000;
-  const height = rect.height || 700;
+function pointAlongPath(points, progress, width, height) {
   const segments = [];
   let total = 0;
 
@@ -175,13 +184,23 @@ function pointAlongPath(points, progress) {
       const local = segment.length === 0 ? 0 : target / segment.length;
       return {
         x: segment.start.x + (segment.end.x - segment.start.x) * local,
-        y: segment.start.y + (segment.end.y - segment.start.y) * local
+        y: segment.start.y + (segment.end.y - segment.start.y) * local,
+        angle: Math.atan2((segment.end.y - segment.start.y) * height, (segment.end.x - segment.start.x) * width) * 180 / Math.PI
       };
     }
     target -= segment.length;
   }
 
-  return points[points.length - 1];
+  const last = points[points.length - 1];
+  const previous = points[points.length - 2];
+  return {
+    ...last,
+    angle: Math.atan2((last.y - previous.y) * height, (last.x - previous.x) * width) * 180 / Math.PI
+  };
+}
+
+function pixelDistance(first, second, width, height) {
+  return Math.hypot((first.x - second.x) * width / 100, (first.y - second.y) * height / 100);
 }
 
 function updateUi() {

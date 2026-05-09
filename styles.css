@@ -168,24 +168,47 @@ select {
 }
 
 .space {
-  --tile: clamp(46px, 5.1vw, 70px);
   position: absolute;
   left: calc(var(--x) * 1%);
   top: calc(var(--y) * 1%);
-  width: var(--tile);
-  height: var(--tile);
+  width: var(--tile-w);
+  height: var(--tile-h);
   display: flex;
   align-items: center;
   justify-content: center;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) rotate(var(--r));
   border: 2px solid var(--line);
   background: #fffaf1;
   text-align: center;
-  font-size: clamp(0.52rem, 0.86vw, 0.74rem);
+  font-size: clamp(0.48rem, 0.74vw, 0.72rem);
   font-weight: 800;
   line-height: 1.05;
   padding: 5px;
-  box-shadow: 2px 2px 0 rgba(42, 37, 33, 0.13);
+  box-shadow: none;
+  outline: 1px solid rgba(42, 37, 33, 0.08);
+}
+
+.space::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgba(116, 69, 37, 0.13);
+  pointer-events: none;
+}
+
+.space > span {
+  position: relative;
+  z-index: 1;
+  max-width: calc(var(--tile-w) - 10px);
+  transform: rotate(var(--text-r));
+}
+
+.space:nth-child(3n + 1) {
+  background-image: repeating-linear-gradient(102deg, rgba(116, 69, 37, 0.08) 0 4px, transparent 4px 12px);
+}
+
+.space:nth-child(3n + 2) {
+  background-image: repeating-linear-gradient(82deg, rgba(116, 69, 37, 0.06) 0 5px, transparent 5px 13px);
 }
 
 .space.start,
@@ -220,7 +243,7 @@ select {
 }
 
 .space.active {
-  outline: 5px solid rgba(229, 185, 78, 0.8);
+  outline: 5px solid rgba(229, 185, 78, 0.82);
   z-index: 4;
 }
 
@@ -230,7 +253,7 @@ select {
   bottom: -14px;
   display: flex;
   gap: 2px;
-  transform: translateX(-50%);
+  transform: translateX(-50%) rotate(var(--text-r));
 }
 
 .token {
@@ -727,7 +750,7 @@ select {
   }
 
   .space {
-    --tile: clamp(34px, 10.5vw, 44px);
+    font-size: clamp(0.42rem, 2vw, 0.62rem);
   }
 
   .capy-center {
