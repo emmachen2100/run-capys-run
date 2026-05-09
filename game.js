@@ -115,10 +115,10 @@ function renderBoard() {
   spacesEl.innerHTML = "";
   const mobile = window.matchMedia("(max-width: 650px)").matches;
   const cx = 50;
-  const cy = mobile ? 52 : 54;
-  const rx = mobile ? 40 : 45;
-  const ry = mobile ? 43 : 37;
-  const startAngle = mobile ? 232 : 224;
+  const cy = mobile ? 70 : 67;
+  const rx = mobile ? 38 : 43;
+  const ry = mobile ? 22 : 24;
+  const startAngle = mobile ? 225 : 224;
 
   boardSpaces.forEach((space, index) => {
     const angle = startAngle - (index / boardSpaces.length) * 360;
