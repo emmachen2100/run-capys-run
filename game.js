@@ -21,7 +21,6 @@ const powerDownButton = document.querySelector("#power-down");
 
 const boardSpaces = [
   { label: "Start", type: "start" },
-  { label: "", type: "plain" },
   { label: "+3", type: "points", points: 3 },
   { label: "Mystery", type: "mystery" },
   { label: "", type: "plain" },
@@ -30,7 +29,6 @@ const boardSpaces = [
   { label: "", type: "plain" },
   { label: "Mystery", type: "mystery" },
   { label: "Save reverse", type: "save-reverse", saveReverse: true },
-  { label: "", type: "plain" },
   { label: "-2", type: "points", points: -2 },
   { label: "Spin again", type: "move", spinAgain: true },
   { label: "Mystery", type: "mystery" },
@@ -41,7 +39,6 @@ const boardSpaces = [
   { label: "Reverse", type: "reverse", reverseNow: true },
   { label: "+6", type: "points", points: 6 },
   { label: "Mystery", type: "mystery" },
-  { label: "", type: "plain" },
   { label: "Skip next", type: "move", skipNext: true },
   { label: "+7", type: "points", points: 7 },
   { label: "", type: "plain" },
@@ -120,19 +117,20 @@ function renderBoard() {
   svg.setAttribute("viewBox", "0 0 1000 700");
   svg.setAttribute("preserveAspectRatio", "none");
   spacesEl.appendChild(svg);
+  svg.appendChild(createCapyDefs());
 
   boardSpaces.forEach((space, index) => {
     const start = track.start + track.span * index / boardSpaces.length;
     const end = track.start + track.span * (index + 1) / boardSpaces.length;
     const mid = (start + end) / 2;
-    const innerStart = trackPoint(track.inner, start);
-    const innerMid = trackPoint(track.inner, mid);
-    const innerEnd = trackPoint(track.inner, end);
-    const outerStart = trackPoint(track.outer, start);
-    const outerMid = trackPoint(track.outer, mid);
-    const outerEnd = trackPoint(track.outer, end);
-    const label = trackPoint(track.label, mid);
-    const token = trackPoint(track.token, mid);
+    const innerStart = faceCurvePoint(track, start);
+    const innerMid = faceCurvePoint(track, mid);
+    const innerEnd = faceCurvePoint(track, end);
+    const outerStart = growFromFace(track, start, track.thickness);
+    const outerMid = growFromFace(track, mid, track.thickness);
+    const outerEnd = growFromFace(track, end, track.thickness);
+    const label = growFromFace(track, mid, track.labelOffset);
+    const token = growFromFace(track, mid, track.tokenOffset);
     const type = space.type === "save-reverse" ? "reverse save-reverse" : space.type;
 
     const group = createSvgElement("g");
@@ -169,29 +167,95 @@ function renderBoard() {
     group.append(path, text, tokenHost);
     svg.appendChild(group);
   });
+
+  svg.appendChild(createSvgCapyFace(track));
 }
 
 function buildTrackGeometry(mobile) {
   return {
     start: 226,
     span: -272,
-    inner: mobile
+    center: mobile ? { x: 500, y: 382 } : { x: 500, y: 382 },
+    face: mobile
       ? { cx: 500, cy: 392, rx: 430, ry: 158, sidePinch: 65 }
       : { cx: 500, cy: 388, rx: 354, ry: 210, sidePinch: 60 },
-    outer: mobile
-      ? { cx: 500, cy: 392, rx: 490, ry: 304, sidePinch: 8 }
-      : { cx: 500, cy: 388, rx: 456, ry: 306, sidePinch: 12 },
-    label: mobile
-      ? { cx: 500, cy: 392, rx: 456, ry: 225, sidePinch: 24 }
-      : { cx: 500, cy: 388, rx: 407, ry: 258, sidePinch: 30 },
-    token: mobile
-      ? { cx: 500, cy: 392, rx: 470, ry: 263, sidePinch: 16 }
-      : { cx: 500, cy: 388, rx: 430, ry: 282, sidePinch: 18 }
+    faceTopY: mobile ? 286 : 177,
+    thickness: mobile ? 98 : 104,
+    labelOffset: mobile ? 54 : 58,
+    tokenOffset: mobile ? 76 : 80
   };
 }
 
 function createSvgElement(tagName) {
   return document.createElementNS("http://www.w3.org/2000/svg", tagName);
+}
+
+function createCapyDefs() {
+  const defs = createSvgElement("defs");
+  const pattern = createSvgElement("pattern");
+  pattern.setAttribute("id", "capy-stripes");
+  pattern.setAttribute("patternUnits", "userSpaceOnUse");
+  pattern.setAttribute("width", 17);
+  pattern.setAttribute("height", 17);
+  pattern.setAttribute("patternTransform", "rotate(13)");
+
+  const stripe = createSvgElement("rect");
+  stripe.setAttribute("x", 0);
+  stripe.setAttribute("y", 0);
+  stripe.setAttribute("width", 5);
+  stripe.setAttribute("height", 17);
+  pattern.appendChild(stripe);
+  defs.appendChild(pattern);
+  return defs;
+}
+
+function createSvgCapyFace(track) {
+  const group = createSvgElement("g");
+  group.classList.add("svg-capy-face");
+
+  const face = createSvgElement("path");
+  face.classList.add("svg-capy-face-fill");
+  face.setAttribute("d", faceShapePath(track));
+
+  const texture = createSvgElement("path");
+  texture.classList.add("svg-capy-face-texture");
+  texture.setAttribute("d", faceShapePath(track));
+
+  const leftCheek = createSvgElement("circle");
+  leftCheek.classList.add("svg-capy-cheek");
+  leftCheek.setAttribute("cx", track.center.x - 135);
+  leftCheek.setAttribute("cy", track.center.y + 82);
+  leftCheek.setAttribute("r", 45);
+
+  const rightCheek = createSvgElement("circle");
+  rightCheek.classList.add("svg-capy-cheek");
+  rightCheek.setAttribute("cx", track.center.x + 135);
+  rightCheek.setAttribute("cy", track.center.y + 82);
+  rightCheek.setAttribute("r", 45);
+
+  group.append(face, texture, leftCheek, rightCheek);
+  return group;
+}
+
+function faceShapePath(track) {
+  const start = faceCurvePoint(track, track.start);
+  const end = faceCurvePoint(track, track.start + track.span);
+  const commands = [`M ${start.x} ${start.y}`];
+
+  for (let index = 0; index < boardSpaces.length; index += 1) {
+    const segmentStart = track.start + track.span * index / boardSpaces.length;
+    const segmentEnd = track.start + track.span * (index + 1) / boardSpaces.length;
+    const mid = faceCurvePoint(track, (segmentStart + segmentEnd) / 2);
+    const next = faceCurvePoint(track, segmentEnd);
+    commands.push(`Q ${mid.x} ${mid.y} ${next.x} ${next.y}`);
+  }
+
+  commands.push(
+    `C ${end.x - 12} ${track.faceTopY + 44} 640 ${track.faceTopY} 500 ${track.faceTopY}`,
+    `C 360 ${track.faceTopY} ${start.x + 12} ${track.faceTopY + 44} ${start.x} ${start.y}`,
+    "Z"
+  );
+  return commands.join(" ");
 }
 
 function appendSpaceLabel(textEl, label) {
@@ -209,6 +273,21 @@ function appendSpaceLabel(textEl, label) {
     line.textContent = word;
     textEl.appendChild(line);
   });
+}
+
+function faceCurvePoint(track, degrees) {
+  return trackPoint(track.face, degrees);
+}
+
+function growFromFace(track, degrees, amount) {
+  const point = faceCurvePoint(track, degrees);
+  const dx = point.x - track.center.x;
+  const dy = point.y - track.center.y;
+  const distance = Math.hypot(dx, dy) || 1;
+  return {
+    x: roundPoint(point.x + dx / distance * amount),
+    y: roundPoint(point.y + dy / distance * amount)
+  };
 }
 
 function trackPoint(curve, degrees) {

@@ -265,6 +265,31 @@ select {
   background: var(--pelican);
 }
 
+.svg-capy-face {
+  pointer-events: none;
+}
+
+.svg-capy-face-fill {
+  fill: var(--capy-light);
+  stroke: var(--line);
+  stroke-width: 5;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.svg-capy-face-texture {
+  fill: url("#capy-stripes");
+  opacity: 0.28;
+}
+
+#capy-stripes rect {
+  fill: rgba(116, 69, 37, 0.4);
+}
+
+.svg-capy-cheek {
+  fill: rgba(255, 240, 216, 0.24);
+}
+
 .capy-center {
   position: absolute;
   inset: 13% 19% 15%;
@@ -274,14 +299,9 @@ select {
 .capy-face {
   position: absolute;
   inset: 17% 2% 0;
-  border: 4px solid var(--line);
-  border-radius: 48% 52% 42% 42% / 56% 56% 36% 36%;
-  background:
-    radial-gradient(circle at 28% 47%, rgba(255, 240, 216, 0.25) 0 8%, transparent 8.5%),
-    radial-gradient(circle at 72% 47%, rgba(255, 240, 216, 0.25) 0 8%, transparent 8.5%),
-    repeating-linear-gradient(103deg, rgba(116, 69, 37, 0.12) 0 6px, transparent 6px 15px),
-    var(--capy-light);
-  box-shadow: inset 0 -18px 0 rgba(93, 56, 33, 0.08);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .capy-ear {
