@@ -64,6 +64,8 @@ const cardBlueprints = [
   { title: "Switch places", text: "Switch places with another player.", apply: switchPlacesWithLeader }
 ];
 
+const MYSTERY_CARD_TOTAL = 32;
+
 let state;
 
 function repeatCard(count, card) {
@@ -106,6 +108,9 @@ function createGame() {
   boardEl.querySelector(".winner-banner")?.remove();
   renderBoard();
   resetLog();
+  if (state.deck.length !== MYSTERY_CARD_TOTAL) {
+    addLog(`Mystery deck should have ${MYSTERY_CARD_TOTAL} cards, but has ${state.deck.length}.`);
+  }
   addLog("Spin to decide teams. Highest spin becomes the Capys team.");
   updateUi();
 }
@@ -616,14 +621,6 @@ async function resolveSpace(game, player) {
   const space = boardSpaces[player.position];
 
   if (space.points) addPoints(game, player.team, space.points);
-  if (space.saveReverse) {
-    player.savedReverse = true;
-    addLog(`${player.name} saved a reverse square.`);
-  }
-  if (space.reverseNow) {
-    game.direction *= -1;
-    addLog("Play order reversed.");
-  }
   if (space.skipNext) {
     const next = nextLivingPlayer(game);
     next.skip = true;
@@ -634,7 +631,7 @@ async function resolveSpace(game, player) {
     addLog(`${space.label}.`);
     await movePlayer(game, player, space.move, "space");
   }
-  if (space.mystery) await drawMystery(game, player);
+  if (isMysterySpace(space)) await drawMystery(game, player);
   if (space.spinAgain && !game.over) {
     addLog(`${player.name} gets an extra spin.`);
     game.busy = false;
@@ -644,6 +641,10 @@ async function resolveSpace(game, player) {
   return false;
 }
 
+function isMysterySpace(space) {
+  return space?.type === "mystery";
+}
+
 async function drawMystery(game, player, chained = false) {
   if (game.deck.length === 0) {
     game.deck = shuffle(game.discard);
@@ -651,6 +652,7 @@ async function drawMystery(game, player, chained = false) {
     addLog("Mystery deck reshuffled.");
   }
 
+  const startingPosition = player.position;
   const card = game.deck.pop();
   game.lastCard = card;
   game.discard.push(card);
@@ -658,8 +660,7 @@ async function drawMystery(game, player, chained = false) {
   await card.apply(game, player);
 
   if (!chained && !game.over) {
-    const space = boardSpaces[player.position];
-    if (!space.mystery && !player.finished) await resolveSpace(game, player);
+    if (player.position !== startingPosition && !player.finished) await resolveSpace(game, player);
   }
 }
 
