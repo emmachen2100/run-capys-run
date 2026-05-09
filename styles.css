@@ -240,8 +240,8 @@ select {
   justify-content: center;
   align-content: center;
   gap: 2px;
-  width: 76px;
-  min-height: 42px;
+  width: 86px;
+  min-height: 48px;
 }
 
 .token {
@@ -263,6 +263,61 @@ select {
 
 .token.pelicans {
   background: var(--pelican);
+}
+
+.character-token {
+  position: relative;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+  color: var(--ink);
+}
+
+.token.character-token {
+  width: 33px;
+  height: 35px;
+}
+
+.character-art {
+  position: absolute;
+  inset: 0;
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  background-size: contain;
+  filter: drop-shadow(1px 2px 0 rgba(42, 37, 33, 0.28));
+}
+
+.capy-character .character-art {
+  background-image: url("assets/capy-character.png");
+}
+
+.pelican-character .character-art {
+  background-image: url("assets/pelican-character.png");
+}
+
+.token.capy-character .character-art {
+  inset: -5px -2px 0;
+}
+
+.token.pelican-character .character-art {
+  inset: -2px -7px 2px;
+}
+
+.character-number {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 14px;
+  height: 14px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--line);
+  border-radius: 50%;
+  background: #fffaf1;
+  font-size: 0.5rem;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .svg-capy-face {
@@ -345,7 +400,7 @@ select {
   justify-content: center;
   flex-wrap: wrap;
   gap: 3px;
-  max-width: 92px;
+  max-width: 112px;
 }
 
 .ear-token {
@@ -372,6 +427,29 @@ select {
 
 .ear-token.unassigned {
   background: var(--muted);
+}
+
+.ear-token.character-token {
+  width: 38px;
+  height: 36px;
+  border: 0;
+  background: transparent;
+}
+
+.ear-token.capy-character .character-art {
+  inset: -5px 0 0;
+}
+
+.ear-token.pelican-character .character-art {
+  inset: 0 -8px 2px;
+}
+
+.ear-token .character-number {
+  right: -1px;
+  bottom: -1px;
+  width: 15px;
+  height: 15px;
+  font-size: 0.52rem;
 }
 
 .mystery-ear {

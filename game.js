@@ -162,10 +162,10 @@ function renderBoard() {
 
     const tokenHost = createSvgElement("foreignObject");
     tokenHost.classList.add("tokens-host");
-    tokenHost.setAttribute("x", token.x - 38);
-    tokenHost.setAttribute("y", token.y - 21);
-    tokenHost.setAttribute("width", 76);
-    tokenHost.setAttribute("height", 42);
+    tokenHost.setAttribute("x", token.x - 43);
+    tokenHost.setAttribute("y", token.y - 24);
+    tokenHost.setAttribute("width", 86);
+    tokenHost.setAttribute("height", 48);
     const tokens = document.createElement("div");
     tokens.className = "tokens";
     tokens.setAttribute("aria-hidden", "true");
@@ -347,7 +347,7 @@ function updateSpaces(current) {
     const index = Number(spaceEl.dataset.index);
     const tokens = state.players
       .filter((player) => player.position === index && !player.finished && state.phase === "race")
-      .map((player) => `<span class="token ${player.team}">${player.id + 1}</span>`)
+      .map((player) => playerTokenHtml(player, "token"))
       .join("");
     spaceEl.querySelector(".tokens").innerHTML = tokens;
     spaceEl.classList.toggle("active", state.phase === "race" && index === current.position && !current.finished);
@@ -387,8 +387,24 @@ function updateTeams() {
 
 function updateEarCharacters() {
   earCharactersEl.innerHTML = state.players.map((player) => {
-    return `<span class="ear-token ${player.team}" title="${player.name}">${player.id + 1}</span>`;
+    return playerTokenHtml(player, "ear-token");
   }).join("");
+}
+
+function playerTokenHtml(player, baseClass) {
+  const character = playerCharacter(player);
+  return `
+    <span class="${baseClass} character-token ${player.team} ${character}" title="${player.name}" aria-label="${player.name}">
+      <span class="character-art" aria-hidden="true"></span>
+      <span class="character-number">${player.id + 1}</span>
+    </span>
+  `;
+}
+
+function playerCharacter(player) {
+  if (player.team === "capys") return "capy-character";
+  if (player.team === "pelicans") return "pelican-character";
+  return player.id % 2 === 0 ? "capy-character" : "pelican-character";
 }
 
 function updateMysteryEar() {
