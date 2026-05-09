@@ -5,8 +5,8 @@
   --paper: #fffaf1;
   --paper-strong: #fff4df;
   --line: #2a2521;
-  --capy: #b87950;
-  --capy-light: #d8a37b;
+  --capy: #d8bd6d;
+  --capy-light: #ecd27d;
   --grass: #77a959;
   --water: #77b9cf;
   --berry: #ce6d86;
@@ -274,6 +274,7 @@ select {
   stroke: var(--line);
   stroke-width: 5;
   stroke-linejoin: round;
+  stroke-linecap: round;
   vector-effect: non-scaling-stroke;
 }
 
@@ -283,11 +284,11 @@ select {
 }
 
 #capy-stripes rect {
-  fill: rgba(116, 69, 37, 0.4);
+  fill: rgba(139, 102, 44, 0.24);
 }
 
 .svg-capy-cheek {
-  fill: rgba(255, 240, 216, 0.24);
+  fill: rgba(255, 240, 216, 0.16);
 }
 
 .capy-center {
@@ -306,13 +307,11 @@ select {
 
 .capy-ear {
   position: absolute;
-  top: 3%;
-  width: 28%;
-  height: 28%;
+  top: 1%;
+  width: 29%;
+  height: 29%;
   border: 3px solid var(--line);
-  background:
-    radial-gradient(circle at 50% 54%, rgba(255, 250, 241, 0.42) 0 41%, transparent 42%),
-    var(--capy);
+  background: var(--capy-light);
   z-index: 1;
   display: grid;
   align-content: center;
@@ -323,15 +322,15 @@ select {
 }
 
 .capy-ear-left {
-  left: 8%;
-  transform: rotate(-12deg);
-  border-radius: 58% 48% 44% 70%;
+  left: 7%;
+  transform: rotate(-11deg);
+  border-radius: 50%;
 }
 
 .capy-ear-right {
-  right: 8%;
-  transform: rotate(12deg);
-  border-radius: 50% 60% 70% 40%;
+  right: 7%;
+  transform: rotate(11deg);
+  border-radius: 50%;
 }
 
 .capy-ear p {
@@ -399,9 +398,9 @@ select {
 
 .capy-eye {
   position: absolute;
-  top: 38%;
-  width: 24px;
-  height: 31px;
+  top: 35%;
+  width: 26px;
+  height: 38px;
   border: 2px solid var(--line);
   border-radius: 50%;
   background: #221b17;
@@ -419,36 +418,52 @@ select {
 }
 
 .capy-eye.left {
-  left: 30%;
+  left: 29%;
 }
 
 .capy-eye.right {
-  right: 30%;
+  right: 29%;
 }
 
 .capy-nose {
   position: absolute;
   left: 50%;
-  top: 56%;
-  width: 108px;
-  height: 76px;
+  top: 60%;
+  width: 122px;
+  height: 86px;
   transform: translateX(-50%);
   border: 3px solid var(--line);
-  border-radius: 48% 48% 42% 42%;
+  border-radius: 50%;
+  background: #8c672f;
+}
+
+.capy-nose::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 41%;
+  width: 4px;
+  height: 34px;
+  border-radius: 999px;
+  background: rgba(50, 39, 25, 0.56);
+  transform: translateX(-50%) rotate(-9deg);
+}
+
+.capy-nose::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 29%;
+  width: 54px;
+  height: 38px;
+  transform: translateX(-50%);
   background:
-    radial-gradient(ellipse at 50% 35%, #37271f 0 18%, transparent 19%),
-    #f2e1cf;
+    linear-gradient(42deg, transparent 0 48%, rgba(50, 39, 25, 0.56) 49% 53%, transparent 54%) left top / 50% 100% no-repeat,
+    linear-gradient(-52deg, transparent 0 48%, rgba(50, 39, 25, 0.56) 49% 53%, transparent 54%) right top / 50% 100% no-repeat;
 }
 
 .capy-mouth {
-  position: absolute;
-  left: 50%;
-  top: 69%;
-  width: 82px;
-  height: 38px;
-  transform: translateX(-50%);
-  border-bottom: 4px solid var(--line);
-  border-radius: 50%;
+  display: none;
 }
 
 .side-panel {

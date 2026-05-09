@@ -175,16 +175,16 @@ function renderBoard() {
 
 function buildTrackGeometry(mobile) {
   return {
-    start: 226,
-    span: -272,
-    center: mobile ? { x: 500, y: 382 } : { x: 500, y: 382 },
+    start: mobile ? 224 : 225,
+    span: mobile ? -268 : -270,
+    center: mobile ? { x: 500, y: 382 } : { x: 500, y: 378 },
     face: mobile
-      ? { cx: 500, cy: 392, rx: 430, ry: 158, sidePinch: 65 }
-      : { cx: 500, cy: 388, rx: 354, ry: 210, sidePinch: 60 },
-    faceTopY: mobile ? 286 : 177,
-    thickness: mobile ? 98 : 104,
-    labelOffset: mobile ? 54 : 58,
-    tokenOffset: mobile ? 76 : 80
+      ? { cx: 500, cy: 392, rx: 392, ry: 166, sidePinch: 24 }
+      : { cx: 500, cy: 378, rx: 360, ry: 224, sidePinch: 0 },
+    faceTopY: mobile ? 278 : 168,
+    thickness: mobile ? 96 : 98,
+    labelOffset: mobile ? 54 : 55,
+    tokenOffset: mobile ? 74 : 76
   };
 }
 
@@ -253,8 +253,8 @@ function faceShapePath(track) {
   }
 
   commands.push(
-    `C ${end.x - 12} ${track.faceTopY + 44} 640 ${track.faceTopY} 500 ${track.faceTopY}`,
-    `C 360 ${track.faceTopY} ${start.x + 12} ${track.faceTopY + 44} ${start.x} ${start.y}`,
+    `C ${end.x - 46} ${track.faceTopY + 28} ${track.center.x + 135} ${track.faceTopY - 4} ${track.center.x} ${track.faceTopY}`,
+    `C ${track.center.x - 135} ${track.faceTopY - 4} ${start.x + 46} ${track.faceTopY + 28} ${start.x} ${start.y}`,
     "Z"
   );
   return commands.join(" ");
