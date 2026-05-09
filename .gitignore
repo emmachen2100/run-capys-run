@@ -1,0 +1,10 @@
+# Original phone photos may contain private EXIF/GPS metadata.
+pics/
+*.Zone.Identifier
+
+# Local network helper; not needed for the public GitHub Pages site.
+expose-wsl-game.ps1
+
+# OS/editor noise
+.DS_Store
+Thumbs.db

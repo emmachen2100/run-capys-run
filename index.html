@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Run, Capys, Run</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="game-panel" aria-labelledby="game-title">
+        <div class="top-bar">
+          <div>
+            <p class="eyebrow">Emma's board game</p>
+            <h1 id="game-title">Run, Capys, Run</h1>
+          </div>
+          <div class="toolbar" aria-label="Game setup">
+            <label class="select-label" for="player-count">Players</label>
+            <select id="player-count">
+              <option value="2">2</option>
+              <option value="4">4</option>
+            </select>
+            <button id="new-game" type="button">New game</button>
+          </div>
+        </div>
+
+        <div class="play-layout">
+          <section class="board-wrap" aria-label="Game board">
+            <div id="board" class="board" aria-live="polite">
+              <div class="capy-center" aria-hidden="true">
+                <div class="capy-ear capy-ear-left"></div>
+                <div class="capy-ear capy-ear-right"></div>
+                <div class="capy-face">
+                  <span class="capy-eye left"></span>
+                  <span class="capy-eye right"></span>
+                  <span class="capy-nose"></span>
+                  <span class="capy-mouth"></span>
+                </div>
+              </div>
+              <div id="spaces" class="spaces"></div>
+            </div>
+          </section>
+
+          <aside class="side-panel" aria-label="Controls and score">
+            <section class="turn-card">
+              <p class="eyebrow">Current turn</p>
+              <h2 id="turn-name">Player 1</h2>
+              <p id="turn-team" class="team-pill capys">Capys team</p>
+              <div id="spinner" class="spinner" aria-label="Spinner result">
+                <div class="spinner-pointer"></div>
+                <div class="spinner-wheel">
+                  <span>1</span>
+                  <span>2</span>
+                  <span>3</span>
+                  <span>4</span>
+                  <span>5</span>
+                  <span>6</span>
+                </div>
+              </div>
+              <button id="spin-button" class="primary-action" type="button">Spin</button>
+              <button id="reverse-button" class="secondary-action" type="button" disabled>Use saved reverse</button>
+            </section>
+
+            <section class="scoreboard" aria-labelledby="score-title">
+              <h2 id="score-title">Teams</h2>
+              <div id="teams"></div>
+            </section>
+
+            <section class="event-log" aria-labelledby="log-title">
+              <h2 id="log-title">Notebook</h2>
+              <ol id="log"></ol>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <section class="reference-panel" aria-labelledby="poster-title">
+        <div class="poster-heading">
+          <div>
+            <p class="eyebrow">Design reference</p>
+            <h2 id="poster-title">Poster pictures</h2>
+          </div>
+          <button id="toggle-rules" type="button" aria-expanded="false" aria-controls="rules">Rules</button>
+        </div>
+        <div id="rules" class="rules" hidden>
+          <p>Spin and move around the capybara board. Landing on point spaces changes your team's score. Mystery cards can move players, swap scores, reverse direction, or save a reverse for later.</p>
+          <p>In a 2 player game, the first player to finish wins for their team. In a 4 player game, both players on a team must finish.</p>
+        </div>
+        <div class="poster-strip" aria-label="Poster photo thumbnails">
+          <img src="assets/poster-full.jpg" alt="Full poster for Run, Capys, Run">
+          <img src="assets/poster-guide.jpg" alt="Player guide section of poster">
+          <img src="assets/poster-probability.jpg" alt="Mystery card probability list">
+        </div>
+      </section>
+    </main>
+
+    <script src="game.js"></script>
+  </body>
+</html>
