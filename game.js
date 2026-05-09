@@ -157,10 +157,10 @@ function renderBoard() {
 
     const tokenHost = createSvgElement("foreignObject");
     tokenHost.classList.add("tokens-host");
-    tokenHost.setAttribute("x", token.x - 25);
-    tokenHost.setAttribute("y", token.y - 14);
-    tokenHost.setAttribute("width", 50);
-    tokenHost.setAttribute("height", 28);
+    tokenHost.setAttribute("x", token.x - 38);
+    tokenHost.setAttribute("y", token.y - 21);
+    tokenHost.setAttribute("width", 76);
+    tokenHost.setAttribute("height", 42);
     const tokens = document.createElement("div");
     tokens.className = "tokens";
     tokens.setAttribute("aria-hidden", "true");
@@ -173,20 +173,20 @@ function renderBoard() {
 
 function buildTrackGeometry(mobile) {
   return {
-    start: 219,
-    span: -258,
+    start: 226,
+    span: -272,
     inner: mobile
-      ? { cx: 500, cy: 424, rx: 344, ry: 220, sidePinch: 52 }
-      : { cx: 500, cy: 416, rx: 354, ry: 228, sidePinch: 58 },
+      ? { cx: 500, cy: 392, rx: 430, ry: 158, sidePinch: 65 }
+      : { cx: 500, cy: 388, rx: 354, ry: 210, sidePinch: 60 },
     outer: mobile
-      ? { cx: 500, cy: 424, rx: 433, ry: 294, sidePinch: 10 }
-      : { cx: 500, cy: 416, rx: 449, ry: 304, sidePinch: 12 },
+      ? { cx: 500, cy: 392, rx: 490, ry: 304, sidePinch: 8 }
+      : { cx: 500, cy: 388, rx: 456, ry: 306, sidePinch: 12 },
     label: mobile
-      ? { cx: 500, cy: 424, rx: 387, ry: 256, sidePinch: 25 }
-      : { cx: 500, cy: 416, rx: 401, ry: 265, sidePinch: 30 },
+      ? { cx: 500, cy: 392, rx: 456, ry: 225, sidePinch: 24 }
+      : { cx: 500, cy: 388, rx: 407, ry: 258, sidePinch: 30 },
     token: mobile
-      ? { cx: 500, cy: 424, rx: 410, ry: 274, sidePinch: 16 }
-      : { cx: 500, cy: 416, rx: 426, ry: 287, sidePinch: 18 }
+      ? { cx: 500, cy: 392, rx: 470, ry: 263, sidePinch: 16 }
+      : { cx: 500, cy: 388, rx: 430, ry: 282, sidePinch: 18 }
   };
 }
 

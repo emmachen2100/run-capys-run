@@ -165,6 +165,7 @@ select {
 .spaces {
   position: absolute;
   inset: 0;
+  z-index: 1;
 }
 
 .track-svg {
@@ -235,13 +236,17 @@ select {
 
 .tokens {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
+  align-content: center;
   gap: 2px;
+  width: 76px;
+  min-height: 42px;
 }
 
 .token {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   display: grid;
   place-items: center;
   border: 2px solid var(--line);
@@ -262,7 +267,8 @@ select {
 
 .capy-center {
   position: absolute;
-  inset: 13% 19% 8%;
+  inset: 13% 19% 15%;
+  z-index: 2;
 }
 
 .capy-face {
@@ -737,7 +743,7 @@ select {
   }
 
   .capy-center {
-    inset: 25% 12% 17%;
+    inset: 25% 12% 22%;
   }
 
   .side-panel,
