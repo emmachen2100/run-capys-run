@@ -155,6 +155,10 @@ function renderBoard() {
     const group = createSvgElement("g");
     group.classList.add("space", ...type.split(" "));
     group.dataset.index = index;
+    group.setAttribute("aria-label", spaceTooltip(space, index));
+
+    const title = createSvgElement("title");
+    title.textContent = spaceTooltip(space, index);
 
     const path = createSvgElement("path");
     path.classList.add("space-path");
@@ -181,9 +185,10 @@ function renderBoard() {
     const tokens = document.createElement("div");
     tokens.className = "tokens";
     tokens.setAttribute("aria-hidden", "true");
+    tokens.title = spaceTooltip(space, index);
     tokenHost.appendChild(tokens);
 
-    group.append(path, text, tokenHost);
+    group.append(title, path, text, tokenHost);
     svg.appendChild(group);
   });
 
@@ -306,6 +311,10 @@ function appendSpaceLabel(textEl, label) {
   });
 }
 
+function spaceTooltip(space, index) {
+  return space.label ? space.label.replace(/\n/g, " ") : `Blank space ${index + 1}`;
+}
+
 function faceCurvePoint(track, degrees) {
   return trackPoint(track.face, degrees);
 }
@@ -420,7 +429,7 @@ function updateEarCharacters() {
 function playerTokenHtml(player, baseClass) {
   const character = playerCharacter(player);
   return `
-    <span class="${baseClass} character-token ${player.team} ${character}" title="${player.name}" aria-label="${player.name}">
+    <span class="${baseClass} character-token ${player.team} ${character}" aria-label="${player.name}">
       <span class="character-art" aria-hidden="true"></span>
       <span class="character-number">${player.id + 1}</span>
     </span>
