@@ -676,8 +676,14 @@ function movementPath(start, amount, finish) {
   let position = start;
 
   if (amount > 0) {
+    let direction = 1;
     for (let step = 0; step < amount; step += 1) {
-      position = position >= finish ? position - 1 : position + 1;
+      if (position >= finish) direction = -1;
+      position += direction;
+      if (position >= finish) {
+        position = finish;
+        direction = -1;
+      }
       path.push(position);
     }
     return path;
