@@ -6,6 +6,7 @@ do
 
 	local localPlayer = Players.LocalPlayer
 	local root = ReplicatedStorage:WaitForChild("RunCapysRun")
+	local AssetConfig = require(root.Shared.AssetConfig)
 	local remotes = root:WaitForChild("Remotes")
 
 	local stateChanged = remotes:WaitForChild("StateChanged")
@@ -18,6 +19,7 @@ do
 	local currentState
 	local spaceButtons = {}
 	local scoreCards = {}
+	local useBoardArt = AssetConfig.BoardImage ~= nil and AssetConfig.BoardImage ~= ""
 
 	local colors = {
 		ink = Color3.fromRGB(28, 24, 21),
@@ -47,7 +49,7 @@ do
 	end
 
 	local function stroke(parent, thickness)
-		create("UIStroke", {
+		return create("UIStroke", {
 			Color = colors.line,
 			Thickness = thickness or 2,
 			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
@@ -112,7 +114,7 @@ do
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		BackgroundTransparency = 1,
 		Position = UDim2.fromScale(0.5, 0.56),
-		Size = UDim2.fromOffset(1000, 700),
+		Size = UDim2.fromOffset(1000, useBoardArt and 760 or 700),
 		Parent = rootFrame,
 	})
 	local boardScale = create("UIScale", { Scale = 1, Parent = board })
@@ -126,11 +128,24 @@ do
 		tokenOffset = 95,
 	}
 
+	if useBoardArt then
+		create("ImageLabel", {
+			Name = "WebBoardArt",
+			BackgroundTransparency = 1,
+			Image = AssetConfig.BoardImage,
+			ScaleType = Enum.ScaleType.Fit,
+			Size = UDim2.fromScale(1, 1),
+			ZIndex = 1,
+			Parent = board,
+		})
+	end
+
 	local face = create("Frame", {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		BackgroundColor3 = colors.face,
 		Position = UDim2.fromOffset(boardCenter.X, boardCenter.Y + 20),
 		Size = UDim2.fromOffset(690, 405),
+		Visible = not useBoardArt,
 		ZIndex = 3,
 		Parent = board,
 	})
@@ -145,6 +160,7 @@ do
 			BorderSizePixel = 0,
 			Position = UDim2.fromOffset(position.X, position.Y),
 			Size = UDim2.fromOffset(size.X, size.Y),
+			Visible = not useBoardArt,
 			ZIndex = 4,
 			Parent = board,
 		})
@@ -165,6 +181,7 @@ do
 		Position = UDim2.fromOffset(320, 170),
 		Size = UDim2.fromOffset(185, 132),
 		Rotation = -10,
+		Visible = not useBoardArt,
 		ZIndex = 5,
 		Parent = board,
 	})
@@ -187,6 +204,7 @@ do
 		Position = UDim2.fromOffset(680, 170),
 		Size = UDim2.fromOffset(185, 132),
 		Rotation = 10,
+		Visible = not useBoardArt,
 		ZIndex = 5,
 		Parent = board,
 	})
@@ -202,6 +220,7 @@ do
 		Rotation = -10,
 		Position = UDim2.fromScale(0.08, 0.1),
 		Size = UDim2.fromScale(0.84, 0.82),
+		Visible = not useBoardArt,
 		ZIndex = 6,
 		Parent = rightEar,
 	})
@@ -219,7 +238,12 @@ do
 		Parent = board,
 	})
 	corner(spinner, UDim.new(1, 0))
-	stroke(spinner, 3)
+	local spinnerStroke = stroke(spinner, 3)
+	if useBoardArt then
+		spinner.BackgroundTransparency = 1
+		spinner.TextTransparency = 1
+		spinnerStroke.Enabled = false
+	end
 
 	local spinnerPlayer = create("TextLabel", {
 		BackgroundColor3 = colors.paper,
@@ -348,8 +372,13 @@ do
 	local function setButtonEnabled(button, enabled)
 		button.Active = enabled
 		button.AutoButtonColor = enabled
-		button.TextTransparency = enabled and 0 or 0.45
-		button.BackgroundTransparency = enabled and 0 or 0.25
+		if useBoardArt and button == spinner then
+			button.TextTransparency = 1
+			button.BackgroundTransparency = 1
+		else
+			button.TextTransparency = enabled and 0 or 0.45
+			button.BackgroundTransparency = enabled and 0 or 0.25
+		end
 	end
 
 	local function tokenText(playerState)
@@ -400,17 +429,21 @@ do
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				BackgroundColor3 = spaceColor(space),
 				Font = Enum.Font.FredokaOne,
-				Text = space.label,
+				Text = useBoardArt and "" or space.label,
 				TextColor3 = colors.ink,
 				TextSize = space.label == "" and 10 or 13,
 				TextWrapped = true,
+				BackgroundTransparency = useBoardArt and 1 or 0,
+				AutoButtonColor = not useBoardArt,
 				Rotation = 0,
 				Position = UDim2.fromOffset(label.X, label.Y),
 				Size = UDim2.fromOffset(86, 60),
 				ZIndex = 2,
 				Parent = board,
 			})
-			stroke(button, 3)
+			if not useBoardArt then
+				stroke(button, 3)
+			end
 			spaceButtons[index] = button
 		end
 	end

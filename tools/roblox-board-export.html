@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Run, Capys, Run Board Export</title>
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+      html,
+      body {
+        width: 1000px;
+        height: 760px;
+        min-height: 760px;
+        margin: 0;
+        overflow: hidden;
+        background: #fffaf1;
+      }
+
+      .app-shell {
+        width: 1000px;
+        margin: 0;
+        padding: 0;
+      }
+
+      .game-panel {
+        min-height: 760px;
+        padding: 0;
+        background: transparent;
+      }
+
+      .top-bar,
+      .side-panel,
+      .reference-panel,
+      .board-scores,
+      .mystery-card-popup,
+      .spinner-player-token,
+      .ear-characters {
+        display: none !important;
+      }
+
+      .play-layout {
+        display: block;
+        margin: 0;
+      }
+
+      .board-wrap {
+        display: block;
+      }
+
+      .board {
+        width: 1000px;
+        height: 700px;
+        aspect-ratio: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="game-panel" aria-labelledby="game-title">
+        <div class="top-bar">
+          <div>
+            <p class="eyebrow">Emma's board game</p>
+            <h1 id="game-title">Run, Capys, Run</h1>
+          </div>
+          <div class="toolbar" aria-label="Game setup">
+            <label class="select-label" for="player-count">Players</label>
+            <select id="player-count">
+              <option value="2">2</option>
+              <option value="4">4</option>
+            </select>
+            <button id="new-game" type="button">New game</button>
+          </div>
+        </div>
+
+        <div class="play-layout">
+          <section class="board-wrap" aria-label="Game board">
+            <div id="board" class="board" aria-live="polite">
+              <div class="capy-center">
+                <div class="capy-ear capy-ear-left">
+                  <p>Characters</p>
+                  <div id="ear-characters" class="ear-characters"></div>
+                </div>
+                <div id="spinner" class="spinner board-spinner" role="button" tabindex="0" aria-label="Spin">
+                  <div class="spinner-pointer"></div>
+                  <div class="spinner-leaf leaf-left"></div>
+                  <div class="spinner-leaf leaf-right"></div>
+                  <div id="spinner-player-token" class="spinner-player-token" aria-hidden="true"></div>
+                  <div class="spinner-wheel">
+                    <span>1</span>
+                    <span>2</span>
+                    <span>3</span>
+                    <span>4</span>
+                    <span>5</span>
+                    <span>6</span>
+                  </div>
+                </div>
+                <div class="capy-ear capy-ear-right">
+                  <p>Mystery cards</p>
+                  <div id="mystery-ear" class="mystery-ear">?</div>
+                </div>
+                <div class="capy-face">
+                  <span class="capy-eye left"></span>
+                  <span class="capy-eye right"></span>
+                  <span class="capy-nose"></span>
+                  <span class="capy-mouth"></span>
+                </div>
+              </div>
+              <div id="spaces" class="spaces"></div>
+              <div id="board-scores" class="board-scores" aria-label="Team scores"></div>
+              <div id="mystery-card-popup" class="mystery-card-popup" hidden>
+                <span class="eyebrow">Mystery card</span>
+                <span id="mystery-card-player" class="mystery-card-player"></span>
+                <strong id="mystery-card-title"></strong>
+                <span id="mystery-card-text"></span>
+                <span class="mystery-card-actions">
+                  <button id="mystery-card-primary" class="mystery-card-action" type="button">Play card</button>
+                  <button id="mystery-card-secondary" class="mystery-card-action secondary" type="button" hidden>Do not use reverse</button>
+                </span>
+              </div>
+            </div>
+          </section>
+
+          <aside class="side-panel" aria-label="Controls and score">
+            <section class="turn-card">
+              <p id="turn-stage" class="eyebrow">Team picker</p>
+              <h2 id="turn-name">Player 1</h2>
+              <p id="turn-team" class="team-pill capys">Capys team</p>
+              <p id="turn-help" class="turn-help">Spin to decide who becomes the Capys team.</p>
+              <button id="spin-button" class="primary-action" type="button">Spin</button>
+              <button id="reverse-button" class="secondary-action" type="button" disabled>Use saved reverse</button>
+              <div id="pending-card" class="action-card" hidden>
+                <p class="eyebrow">Mystery card</p>
+                <h3 id="pending-card-title"></h3>
+                <p id="pending-card-text"></p>
+                <button id="play-card" class="primary-action" type="button">Play card</button>
+              </div>
+              <div id="pending-move" class="action-card" hidden>
+                <p class="eyebrow">Board space</p>
+                <h3 id="pending-move-title"></h3>
+                <p id="pending-move-help" class="board-space-help">Press the raised space on the board.</p>
+              </div>
+            </section>
+
+            <section class="power-card" aria-labelledby="power-title">
+              <h2 id="power-title">15 point power</h2>
+              <p id="power-status">Earn 15 points to unlock a move.</p>
+              <button id="power-up" class="secondary-action" type="button" disabled>Move your player up 5</button>
+              <button id="power-down" class="secondary-action" type="button" disabled>Move other team down 5</button>
+            </section>
+
+            <section class="scoreboard" aria-labelledby="score-title">
+              <h2 id="score-title">Teams</h2>
+              <div id="teams"></div>
+            </section>
+
+            <section class="event-log" aria-labelledby="log-title">
+              <h2 id="log-title">Notebook</h2>
+              <ol id="log"></ol>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <section class="reference-panel" aria-labelledby="poster-title">
+        <div class="poster-heading">
+          <div>
+            <p class="eyebrow">Design reference</p>
+            <h2 id="poster-title">Poster pictures</h2>
+          </div>
+          <button id="toggle-rules" type="button" aria-expanded="false" aria-controls="rules">Rules</button>
+        </div>
+        <div id="rules" class="rules" hidden></div>
+      </section>
+    </main>
+
+    <script src="../game.js"></script>
+  </body>
+</html>
