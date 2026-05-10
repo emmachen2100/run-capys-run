@@ -1,5 +1,6 @@
 const boardEl = document.querySelector("#board");
 const spacesEl = document.querySelector("#spaces");
+const boardScoresEl = document.querySelector("#board-scores");
 const spinButton = document.querySelector("#spin-button");
 const reverseButton = document.querySelector("#reverse-button");
 const newGameButton = document.querySelector("#new-game");
@@ -369,6 +370,7 @@ function updateUi() {
 
   updateSpaces(current);
   updateTeams();
+  updateBoardScores();
   updateEarCharacters();
   updateMysteryEar();
   updatePowerButtons();
@@ -496,6 +498,62 @@ function updateTeams() {
       </div>
     `;
   }).join("");
+}
+
+function updateBoardScores() {
+  if (state.phase !== "race") {
+    boardScoresEl.hidden = true;
+    boardScoresEl.innerHTML = "";
+    return;
+  }
+
+  boardScoresEl.hidden = false;
+  const capyPlayers = state.players.filter((player) => player.team === "capys");
+  const pelicanPlayers = state.players.filter((player) => player.team === "pelicans");
+  const entries = state.players.length === 2
+    ? [
+        { team: "capys", player: capyPlayers[0], corner: "top-left" },
+        { team: "pelicans", player: pelicanPlayers[0], corner: "top-right" }
+      ]
+    : [
+        { team: "capys", player: capyPlayers[0], corner: "top-left" },
+        { team: "capys", player: capyPlayers[1], corner: "bottom-left" },
+        { team: "pelicans", player: pelicanPlayers[0], corner: "top-right" },
+        { team: "pelicans", player: pelicanPlayers[1], corner: "bottom-right" }
+      ];
+
+  boardScoresEl.innerHTML = entries
+    .filter((entry) => entry.player)
+    .map(boardScoreCardHtml)
+    .join("");
+}
+
+function boardScoreCardHtml({ team, player, corner }) {
+  const score = state.teams[team].score;
+  const powers = availablePowers(team);
+  const progress = powerProgressPercent(team);
+  const powerText = powers > 0 ? `${powers} power ready` : `${pointsUntilPower(team)} to power`;
+  const place = player.finished ? "Finished" : `Space ${player.position + 1}`;
+
+  return `
+    <div class="board-score-card ${corner} ${team}">
+      <div class="board-score-topline">
+        <span>${teamLabel(team)}</span>
+        <strong>${score}</strong>
+      </div>
+      <div class="board-score-player">${player.name} · ${place}</div>
+      <div class="board-power-meter" aria-label="${teamLabel(team)} 15 point power progress">
+        <span style="width: ${progress}%"></span>
+      </div>
+      <div class="board-power-text">${powerText}</div>
+    </div>
+  `;
+}
+
+function powerProgressPercent(team) {
+  if (availablePowers(team) > 0) return 100;
+  const score = Math.max(0, state.teams[team].score);
+  return Math.round((score % 15) / 15 * 100);
 }
 
 function updateEarCharacters() {
