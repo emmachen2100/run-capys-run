@@ -458,6 +458,99 @@ select {
   vector-effect: non-scaling-stroke;
 }
 
+.space-mark {
+  pointer-events: none;
+}
+
+.space-icon-line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.space-icon-fill {
+  fill: var(--ink);
+}
+
+.space-icon-dot {
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.space-icon-text {
+  fill: var(--ink);
+  font-weight: 900;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  paint-order: stroke;
+  stroke: rgba(255, 250, 241, 0.86);
+  stroke-width: 4;
+  vector-effect: non-scaling-stroke;
+}
+
+.space-question {
+  font-size: 24px;
+}
+
+.space-arrow-number {
+  font-size: 15px;
+}
+
+.space-point-value {
+  font-size: 14px;
+}
+
+.space-card-shadow {
+  fill: rgba(42, 37, 33, 0.18);
+}
+
+.space-card {
+  fill: #fffdf8;
+  stroke: var(--ink);
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.start-flag {
+  fill: #f8dc9a;
+  stroke: var(--ink);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.finish-flag {
+  fill: #fffdf8;
+  stroke: var(--ink);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.finish-flag-check,
+.start-dot {
+  fill: var(--ink);
+}
+
+.space-point-good {
+  fill: #f8dc9a;
+  stroke: var(--ink);
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.space-point-bad {
+  fill: #dfedf2;
+  stroke: var(--ink);
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
 .tokens-host {
   overflow: visible;
 }

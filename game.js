@@ -187,11 +187,7 @@ function renderBoard() {
     path.classList.add("space-path");
     path.setAttribute("d", pathData);
 
-    const text = createSvgElement("text");
-    text.classList.add("space-label");
-    text.setAttribute("x", label.x);
-    text.setAttribute("y", label.y);
-    appendSpaceLabel(text, space.label);
+    const mark = createSpaceMark(space, label, mid, track);
 
     const tokens = createSvgElement("g");
     tokens.classList.add("svg-tokens");
@@ -205,7 +201,7 @@ function renderBoard() {
     group.addEventListener("keydown", onSpaceKeydown);
     group.addEventListener("pointerdown", onSpacePointerDown);
 
-    buttonLayer.append(path, text, tokens);
+    buttonLayer.append(path, mark, tokens);
     group.append(title, shadow, buttonLayer);
     svg.appendChild(group);
   });
@@ -301,33 +297,162 @@ function faceShapePath(track) {
   return commands.join(" ");
 }
 
-function appendSpaceLabel(textEl, label) {
-  if (!label) return;
-  if (label.includes("\n")) {
-    const lines = label.split("\n");
-    lines.forEach((lineText, index) => {
-      const line = createSvgElement("tspan");
-      line.setAttribute("x", textEl.getAttribute("x"));
-      line.setAttribute("dy", index === 0 ? `${(1 - lines.length) * 0.5}em` : "1em");
-      line.textContent = lineText;
-      textEl.appendChild(line);
-    });
+function createSpaceMark(space, label, mid, track) {
+  const mark = createSvgElement("g");
+  mark.classList.add("space-mark");
+  mark.setAttribute("transform", `translate(${label.x} ${label.y})`);
+  if (!space.label) return mark;
+
+  if (space.type === "start") {
+    mark.classList.add("start-mark");
+    appendFlagMark(mark, "start");
+    return mark;
+  }
+  if (space.type === "finish") {
+    mark.classList.add("finish-mark");
+    appendFlagMark(mark, "finish");
+    return mark;
+  }
+  if (isMysterySpace(space)) {
+    mark.classList.add("mystery-mark");
+    appendMysteryCardMark(mark);
+    return mark;
+  }
+  if (space.move) {
+    mark.classList.add("move-mark");
+    appendArrowMark(mark, space.move, pathDirectionAngle(track, mid, space.move));
+    return mark;
+  }
+  if (space.spinAgain && !space.points) {
+    mark.classList.add("spin-mark");
+    appendSpinMark(mark);
+    return mark;
+  }
+  if (space.points) {
+    mark.classList.add("points-mark");
+    appendPointsMark(mark, space.points, Boolean(space.spinAgain));
+    return mark;
+  }
+
+  return mark;
+}
+
+function appendFlagMark(mark, kind) {
+  const pole = createSvgElement("line");
+  pole.classList.add("space-icon-line");
+  pole.setAttribute("x1", -11);
+  pole.setAttribute("y1", 12);
+  pole.setAttribute("x2", -11);
+  pole.setAttribute("y2", -12);
+
+  const flag = createSvgElement("path");
+  flag.classList.add(kind === "finish" ? "finish-flag" : "start-flag");
+  flag.setAttribute("d", "M -10 -12 L 13 -8 L 5 0 L 13 8 L -10 5 Z");
+
+  if (kind === "finish") {
+    const stripeA = createSvgElement("path");
+    stripeA.classList.add("finish-flag-check");
+    stripeA.setAttribute("d", "M -5 -11 L 0 -10 L 0 5 L -5 4 Z M 6 -9 L 11 -8 L 7 -2 L 3 -3 Z");
+    mark.append(pole, flag, stripeA);
     return;
   }
 
-  const words = label.split(" ");
-  if (words.length === 1 || label.length <= 8) {
-    textEl.textContent = label;
-    return;
-  }
+  const spark = createSvgElement("circle");
+  spark.classList.add("start-dot");
+  spark.setAttribute("cx", 4);
+  spark.setAttribute("cy", -2);
+  spark.setAttribute("r", 4);
+  mark.append(pole, flag, spark);
+}
 
-  words.forEach((word, index) => {
-    const line = createSvgElement("tspan");
-    line.setAttribute("x", textEl.getAttribute("x"));
-    line.setAttribute("dy", index === 0 ? `${(1 - words.length) * 0.5}em` : "1em");
-    line.textContent = word;
-    textEl.appendChild(line);
-  });
+function appendMysteryCardMark(mark) {
+  const back = createSvgElement("rect");
+  back.classList.add("space-card-shadow");
+  back.setAttribute("x", -9);
+  back.setAttribute("y", -14);
+  back.setAttribute("width", 22);
+  back.setAttribute("height", 28);
+  back.setAttribute("rx", 2);
+  back.setAttribute("transform", "rotate(8)");
+
+  const card = createSvgElement("rect");
+  card.classList.add("space-card");
+  card.setAttribute("x", -12);
+  card.setAttribute("y", -15);
+  card.setAttribute("width", 24);
+  card.setAttribute("height", 30);
+  card.setAttribute("rx", 2);
+  card.setAttribute("transform", "rotate(8)");
+
+  const question = createSvgElement("text");
+  question.classList.add("space-icon-text", "space-question");
+  question.setAttribute("y", 7);
+  question.textContent = "?";
+  mark.append(back, card, question);
+}
+
+function appendSpinMark(mark) {
+  const arc = createSvgElement("path");
+  arc.classList.add("space-icon-line");
+  arc.setAttribute("d", "M -13 -1 A 13 13 0 1 1 7 10");
+
+  const head = createSvgElement("path");
+  head.classList.add("space-icon-fill");
+  head.setAttribute("d", "M 7 10 L 15 9 L 10 16 Z");
+
+  const center = createSvgElement("circle");
+  center.classList.add("space-icon-dot");
+  center.setAttribute("r", 4);
+  mark.append(arc, head, center);
+}
+
+function appendArrowMark(mark, amount, angle) {
+  const arrow = createSvgElement("g");
+  arrow.setAttribute("transform", `rotate(${angle})`);
+
+  const line = createSvgElement("line");
+  line.classList.add("space-icon-line");
+  line.setAttribute("x1", -16);
+  line.setAttribute("y1", 0);
+  line.setAttribute("x2", 12);
+  line.setAttribute("y2", 0);
+
+  const head = createSvgElement("path");
+  head.classList.add("space-icon-fill");
+  head.setAttribute("d", "M 16 0 L 6 -7 L 8 0 L 6 7 Z");
+  arrow.append(line, head);
+
+  const number = createSvgElement("text");
+  number.classList.add("space-icon-text", "space-arrow-number");
+  number.setAttribute("y", -10);
+  number.textContent = Math.abs(amount);
+  mark.append(arrow, number);
+}
+
+function appendPointsMark(mark, points, spinAgain) {
+  const coin = createSvgElement("circle");
+  coin.classList.add(points >= 0 ? "space-point-good" : "space-point-bad");
+  coin.setAttribute("r", spinAgain ? 10 : 13);
+
+  const value = createSvgElement("text");
+  value.classList.add("space-icon-text", "space-point-value");
+  value.setAttribute("y", 4);
+  value.textContent = `${points > 0 ? "+" : ""}${points}`;
+  mark.append(coin, value);
+
+  if (spinAgain) {
+    const spin = createSvgElement("g");
+    spin.setAttribute("transform", "translate(14 0) scale(0.58)");
+    appendSpinMark(spin);
+    mark.append(spin);
+  }
+}
+
+function pathDirectionAngle(track, degrees, amount) {
+  const step = track.span / boardSpaces.length;
+  const from = growFromFace(track, degrees, track.labelOffset);
+  const to = growFromFace(track, degrees + step * Math.sign(amount), track.labelOffset);
+  return Math.atan2(to.y - from.y, to.x - from.x) * 180 / Math.PI;
 }
 
 function spaceTooltip(space, index) {
