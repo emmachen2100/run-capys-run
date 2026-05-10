@@ -994,6 +994,7 @@ async function resolveSpace(game, player) {
 }
 
 function queueSpaceAction(game, player, action) {
+  game.busy = false;
   game.pendingMove = {
     playerId: player.id,
     ...action
@@ -1015,6 +1016,7 @@ async function drawMystery(game, player, chained = false) {
 
   const card = game.deck.pop();
   game.lastCard = card;
+  game.busy = false;
   game.pendingCard = {
     playerId: player.id,
     card,
