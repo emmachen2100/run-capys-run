@@ -383,7 +383,7 @@ select {
 
 .space.actionable .space-button-layer {
   transform: translate(calc(var(--raise-x) * 1), calc(var(--raise-y) * 1)) scale(1.07);
-  animation: raised-space-reminder 4.6s ease-in-out 1.8s infinite;
+  animation: raised-space-reminder 4.6s ease-in-out infinite;
 }
 
 .space.actionable.is-pressed .space-button-layer,
@@ -395,20 +395,20 @@ select {
 
 @keyframes raised-space-reminder {
   0%,
-  46%,
+  44%,
   100% {
     transform: translate(calc(var(--raise-x) * 1), calc(var(--raise-y) * 1)) scale(1.07);
   }
-  56% {
+  10% {
     transform: translate(calc(var(--raise-x) * 1.45), calc(var(--raise-y) * 1.45)) scale(1.11);
   }
-  66% {
+  20% {
     transform: translate(calc(var(--raise-x) * 0.45), calc(var(--raise-y) * 0.45)) scale(1.035);
   }
-  76% {
+  30% {
     transform: translate(calc(var(--raise-x) * 1.25), calc(var(--raise-y) * 1.25)) scale(1.09);
   }
-  86% {
+  40% {
     transform: translate(calc(var(--raise-x) * 1), calc(var(--raise-y) * 1)) scale(1.07);
   }
 }
@@ -903,7 +903,7 @@ select {
 }
 
 .board-spinner.is-spin-ready {
-  animation: spinner-ready-wiggle 4.8s ease-in-out 1.8s infinite;
+  animation: spinner-ready-wiggle 4.8s ease-in-out infinite;
   will-change: transform;
 }
 
@@ -920,23 +920,23 @@ select {
 
 @keyframes spinner-ready-wiggle {
   0%,
-  50%,
+  44%,
   100% {
     transform: translateX(-50%) rotate(0deg);
   }
-  58% {
+  8% {
     transform: translateX(-50%) rotate(-5deg);
   }
-  66% {
+  16% {
     transform: translateX(-50%) rotate(5deg);
   }
-  74% {
+  24% {
     transform: translateX(-50%) rotate(-3deg);
   }
-  82% {
+  32% {
     transform: translateX(-50%) rotate(3deg);
   }
-  90% {
+  40% {
     transform: translateX(-50%) rotate(0deg);
   }
 }
