@@ -187,7 +187,11 @@ function renderBoard() {
     path.classList.add("space-path");
     path.setAttribute("d", pathData);
 
-    const mark = createSpaceMark(space, label, mid, track);
+    const text = createSvgElement("text");
+    text.classList.add("space-label");
+    text.setAttribute("x", label.x);
+    text.setAttribute("y", label.y);
+    appendSpaceLabel(text, space.label);
 
     const tokens = createSvgElement("g");
     tokens.classList.add("svg-tokens");
@@ -201,7 +205,7 @@ function renderBoard() {
     group.addEventListener("keydown", onSpaceKeydown);
     group.addEventListener("pointerdown", onSpacePointerDown);
 
-    buttonLayer.append(path, mark, tokens);
+    buttonLayer.append(path, text, tokens);
     group.append(title, shadow, buttonLayer);
     svg.appendChild(group);
   });
@@ -297,210 +301,33 @@ function faceShapePath(track) {
   return commands.join(" ");
 }
 
-function createSpaceMark(space, label, mid, track) {
-  const mark = createSvgElement("g");
-  mark.classList.add("space-mark");
-  mark.setAttribute("transform", `translate(${label.x} ${label.y})`);
-  if (!space.label) return mark;
-
-  if (space.type === "start") {
-    mark.classList.add("start-mark");
-    appendFlagMark(mark, "start");
-    return mark;
-  }
-  if (space.type === "finish") {
-    mark.classList.add("finish-mark");
-    appendFlagMark(mark, "finish");
-    return mark;
-  }
-  if (isMysterySpace(space)) {
-    mark.classList.add("mystery-mark");
-    appendMysteryCardMark(mark);
-    return mark;
-  }
-  if (space.move) {
-    mark.classList.add("move-mark");
-    appendArrowMark(mark, space.move, pathDirectionAngle(track, mid, space.move));
-    return mark;
-  }
-  if (space.spinAgain && !space.points) {
-    mark.classList.add("spin-mark");
-    appendSpinMark(mark);
-    return mark;
-  }
-  if (space.points) {
-    mark.classList.add("points-mark");
-    appendPointsMark(mark, space.points, Boolean(space.spinAgain));
-    return mark;
-  }
-
-  return mark;
-}
-
-function appendFlagMark(mark, kind) {
-  const pole = createSvgElement("line");
-  pole.classList.add("space-icon-line", "flag-pole");
-  pole.setAttribute("x1", -11);
-  pole.setAttribute("y1", 12);
-  pole.setAttribute("x2", -11);
-  pole.setAttribute("y2", -12);
-
-  const flag = createSvgElement("path");
-  flag.classList.add(kind === "finish" ? "finish-flag" : "start-flag");
-  flag.setAttribute("d", "M -10 -12 L 13 -8 L 5 0 L 13 8 L -10 5 Z");
-
-  if (kind === "finish") {
-    const stripeA = createSvgElement("path");
-    stripeA.classList.add("finish-flag-check");
-    stripeA.setAttribute("d", "M -5 -11 L 0 -10 L 0 5 L -5 4 Z M 6 -9 L 11 -8 L 7 -2 L 3 -3 Z");
-    mark.append(pole, flag, stripeA);
+function appendSpaceLabel(textEl, label) {
+  if (!label) return;
+  if (label.includes("\n")) {
+    const lines = label.split("\n");
+    lines.forEach((lineText, index) => {
+      const line = createSvgElement("tspan");
+      line.setAttribute("x", textEl.getAttribute("x"));
+      line.setAttribute("dy", index === 0 ? `${(1 - lines.length) * 0.5}em` : "1em");
+      line.textContent = lineText;
+      textEl.appendChild(line);
+    });
     return;
   }
 
-  const spark = createSvgElement("circle");
-  spark.classList.add("start-dot");
-  spark.setAttribute("cx", 4);
-  spark.setAttribute("cy", -2);
-  spark.setAttribute("r", 4);
-  mark.append(pole, flag, spark);
-}
-
-function appendMysteryCardMark(mark) {
-  const back = createSvgElement("rect");
-  back.classList.add("space-card-shadow");
-  back.setAttribute("x", -9);
-  back.setAttribute("y", -14);
-  back.setAttribute("width", 22);
-  back.setAttribute("height", 28);
-  back.setAttribute("rx", 2);
-  back.setAttribute("transform", "rotate(8)");
-
-  const card = createSvgElement("rect");
-  card.classList.add("space-card");
-  card.setAttribute("x", -12);
-  card.setAttribute("y", -15);
-  card.setAttribute("width", 24);
-  card.setAttribute("height", 30);
-  card.setAttribute("rx", 2);
-  card.setAttribute("transform", "rotate(8)");
-
-  const question = createSvgElement("text");
-  question.classList.add("space-icon-text", "space-question");
-  question.setAttribute("y", 7);
-  question.textContent = "?";
-
-  const band = createSvgElement("path");
-  band.classList.add("space-card-band");
-  band.setAttribute("d", "M -10 -9 L 11 -6 L 11 -1 L -10 -4 Z");
-  band.setAttribute("transform", "rotate(8)");
-  mark.append(back, card, band, question);
-}
-
-function appendSpinMark(mark) {
-  const wheel = createSvgElement("g");
-  wheel.classList.add("mini-spinner");
-  const colors = ["#f1a340", "#f8bd61", "#ef8e2f", "#ffc878", "#e97e27", "#f7ad4e"];
-  colors.forEach((color, index) => {
-    const segment = createSvgElement("path");
-    segment.classList.add("mini-spinner-segment");
-    segment.setAttribute("fill", color);
-    segment.setAttribute("d", spinnerSegmentPath(0, 0, 15, index * 60 - 90, (index + 1) * 60 - 90));
-    wheel.appendChild(segment);
-  });
-
-  const ring = createSvgElement("circle");
-  ring.classList.add("mini-spinner-ring");
-  ring.setAttribute("r", 15);
-
-  const lines = [0, 60, 120].map((angle) => {
-    const line = createSvgElement("line");
-    line.classList.add("mini-spinner-line");
-    const start = polarPoint(0, 0, 0, angle);
-    const end = polarPoint(0, 0, 15, angle);
-    line.setAttribute("x1", start.x);
-    line.setAttribute("y1", start.y);
-    line.setAttribute("x2", end.x);
-    line.setAttribute("y2", end.y);
-    return line;
-  });
-
-  const center = createSvgElement("circle");
-  center.classList.add("mini-spinner-center");
-  center.setAttribute("r", 3);
-
-  const pointer = createSvgElement("path");
-  pointer.classList.add("mini-spinner-pointer");
-  pointer.setAttribute("d", "M -5 -20 L 5 -20 L 0 -13 Z");
-
-  const leaf = createSvgElement("path");
-  leaf.classList.add("mini-spinner-leaf");
-  leaf.setAttribute("d", "M -4 -17 C -10 -23 -7 -28 1 -24 C 7 -21 5 -16 -1 -15 Z");
-
-  mark.append(wheel, ring, ...lines, center, leaf, pointer);
-}
-
-function appendArrowMark(mark, amount, angle) {
-  const arrow = createSvgElement("g");
-  arrow.classList.add(amount > 0 ? "space-arrow-forward" : "space-arrow-back");
-  arrow.setAttribute("transform", `rotate(${angle})`);
-
-  const line = createSvgElement("line");
-  line.classList.add("space-icon-line");
-  line.setAttribute("x1", -16);
-  line.setAttribute("y1", 0);
-  line.setAttribute("x2", 12);
-  line.setAttribute("y2", 0);
-
-  const head = createSvgElement("path");
-  head.classList.add("space-icon-fill");
-  head.setAttribute("d", "M 16 0 L 6 -7 L 8 0 L 6 7 Z");
-  arrow.append(line, head);
-
-  const number = createSvgElement("text");
-  number.classList.add("space-icon-text", "space-arrow-number");
-  number.setAttribute("y", -10);
-  number.textContent = Math.abs(amount);
-  mark.append(arrow, number);
-}
-
-function appendPointsMark(mark, points, spinAgain) {
-  const value = createSvgElement("text");
-  value.classList.add("space-icon-text", "space-point-value", points >= 0 ? "positive" : "negative");
-  value.setAttribute("y", 4);
-  value.textContent = `${points > 0 ? "+" : ""}${points}`;
-  const diamond = createSvgElement("polygon");
-  diamond.classList.add("space-point-diamond", points >= 0 ? "positive" : "negative");
-  const size = spinAgain ? 12 : 15;
-  diamond.setAttribute("points", `0 ${-size} ${size} 0 0 ${size} ${-size} 0`);
-  mark.append(diamond, value);
-
-  if (spinAgain) {
-    const spin = createSvgElement("g");
-    spin.setAttribute("transform", "translate(14 0) scale(0.58)");
-    appendSpinMark(spin);
-    mark.append(spin);
+  const words = label.split(" ");
+  if (words.length === 1 || label.length <= 8) {
+    textEl.textContent = label;
+    return;
   }
-}
 
-function pathDirectionAngle(track, degrees, amount) {
-  const step = track.span / boardSpaces.length;
-  const from = growFromFace(track, degrees, track.labelOffset);
-  const to = growFromFace(track, degrees + step * Math.sign(amount), track.labelOffset);
-  return Math.atan2(to.y - from.y, to.x - from.x) * 180 / Math.PI;
-}
-
-function spinnerSegmentPath(cx, cy, radius, startAngle, endAngle) {
-  const start = polarPoint(cx, cy, radius, startAngle);
-  const end = polarPoint(cx, cy, radius, endAngle);
-  return `M ${cx} ${cy} L ${start.x} ${start.y} A ${radius} ${radius} 0 0 1 ${end.x} ${end.y} Z`;
-}
-
-function polarPoint(cx, cy, radius, angle) {
-  const radians = angle * Math.PI / 180;
-  return {
-    x: roundPoint(cx + radius * Math.cos(radians)),
-    y: roundPoint(cy + radius * Math.sin(radians))
-  };
+  words.forEach((word, index) => {
+    const line = createSvgElement("tspan");
+    line.setAttribute("x", textEl.getAttribute("x"));
+    line.setAttribute("dy", index === 0 ? `${(1 - words.length) * 0.5}em` : "1em");
+    line.textContent = word;
+    textEl.appendChild(line);
+  });
 }
 
 function spaceTooltip(space, index) {
