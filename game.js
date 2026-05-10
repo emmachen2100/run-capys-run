@@ -769,7 +769,10 @@ function setupBoardScoreCardHtml({ player, corner }) {
   return `
     <div class="board-score-card setup-pick ${corner} ${current ? "current" : ""}">
       <div class="board-score-topline">
-        <span>${player.name}</span>
+        <span class="board-score-identity">
+          ${playerTokenHtml(player, "board-score-token")}
+          <span>${player.name}</span>
+        </span>
         <strong>${roll ?? "-"}</strong>
       </div>
       <div class="board-score-player">${side}</div>
@@ -795,7 +798,10 @@ function boardScoreCardHtml({ team, player, corner }) {
   return `
     <div class="board-score-card ${corner} ${team}">
       <div class="board-score-topline">
-        <span>${teamLabel(team)}</span>
+        <span class="board-score-identity">
+          ${playerTokenHtml(player, "board-score-token")}
+          <span>${teamLabel(team)}</span>
+        </span>
         <strong>${score}</strong>
       </div>
       <div class="board-score-player">${player.name} · ${place}</div>

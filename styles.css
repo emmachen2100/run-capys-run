@@ -179,7 +179,7 @@ select {
 
 .board-score-card {
   position: absolute;
-  width: clamp(126px, 15vw, 176px);
+  width: clamp(148px, 16vw, 190px);
   padding: 8px 10px;
   border: 3px solid var(--line);
   border-radius: 6px;
@@ -227,13 +227,50 @@ select {
 
 .board-score-topline {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
   line-height: 1;
 }
 
+.board-score-identity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.board-score-identity > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-score-token.character-token {
+  flex: 0 0 auto;
+  width: 27px;
+  height: 26px;
+}
+
+.board-score-token.capy-character .character-art {
+  inset: -5px -1px 0;
+}
+
+.board-score-token.pelican-character .character-art {
+  inset: 0 -3px 2px;
+}
+
+.board-score-token .character-number {
+  right: -2px;
+  bottom: -1px;
+  width: 12px;
+  height: 12px;
+  font-size: 0.42rem;
+}
+
 .board-score-topline strong {
+  flex: 0 0 auto;
   font-size: 1.45rem;
 }
 
@@ -1530,6 +1567,19 @@ select {
     width: min(126px, 35vw);
     padding: 6px 7px;
     border-width: 2px;
+  }
+
+  .board-score-token.character-token {
+    width: 23px;
+    height: 23px;
+  }
+
+  .board-score-token.capy-character .character-art {
+    inset: -4px -1px 0;
+  }
+
+  .board-score-token.pelican-character .character-art {
+    inset: 0 -3px 2px;
   }
 
   .board-score-topline strong {
