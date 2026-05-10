@@ -884,7 +884,7 @@ select {
   color: #9d5970;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1400px) {
   .tokens > .character-token:nth-child(1):nth-last-child(2) {
     transform: translate(-50%, -50%) translate(-3px, 0);
   }
