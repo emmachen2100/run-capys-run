@@ -9,6 +9,8 @@ local stateChanged = remotes:WaitForChild("StateChanged")
 local requestSpin = remotes:WaitForChild("RequestSpin")
 local requestNewRound = remotes:WaitForChild("RequestNewRound")
 local requestSavedReverse = remotes:WaitForChild("RequestSavedReverse")
+local requestPlayCard = remotes:WaitForChild("RequestPlayCard")
+local requestDeclineReverse = remotes:WaitForChild("RequestDeclineReverse")
 
 local currentState
 
@@ -121,6 +123,19 @@ local reverseButton = create("TextButton", {
 	Parent = main,
 })
 
+local declineReverseButton = create("TextButton", {
+	BackgroundColor3 = Color3.fromRGB(255, 253, 248),
+	BorderColor3 = colors.line,
+	BorderSizePixel = 2,
+	Font = Enum.Font.GothamBold,
+	Text = "Let card play",
+	TextColor3 = colors.ink,
+	TextSize = 16,
+	Position = UDim2.new(0, 118, 0, 208),
+	Size = UDim2.new(1, -118, 0, 38),
+	Parent = main,
+})
+
 local newRoundButton = create("TextButton", {
 	BackgroundColor3 = Color3.fromRGB(255, 253, 248),
 	BorderColor3 = colors.line,
@@ -129,7 +144,7 @@ local newRoundButton = create("TextButton", {
 	Text = "New game",
 	TextColor3 = colors.ink,
 	TextSize = 16,
-	Position = UDim2.new(0, 0, 0, 214),
+	Position = UDim2.new(0, 0, 0, 258),
 	Size = UDim2.new(1, 0, 0, 40),
 	Parent = main,
 })
@@ -141,7 +156,7 @@ local teamsLabel = create("TextLabel", {
 	TextColor3 = colors.ink,
 	TextSize = 20,
 	TextXAlignment = Enum.TextXAlignment.Left,
-	Position = UDim2.new(0, 0, 0, 270),
+	Position = UDim2.new(0, 0, 0, 310),
 	Size = UDim2.new(1, 0, 0, 26),
 	Parent = main,
 })
@@ -157,7 +172,7 @@ local scoreText = create("TextLabel", {
 	TextWrapped = true,
 	TextXAlignment = Enum.TextXAlignment.Left,
 	TextYAlignment = Enum.TextYAlignment.Top,
-	Position = UDim2.new(0, 0, 0, 300),
+	Position = UDim2.new(0, 0, 0, 340),
 	Size = UDim2.new(1, 0, 0, 112),
 	Parent = main,
 })
@@ -177,7 +192,7 @@ local logLabel = create("TextLabel", {
 	TextColor3 = colors.ink,
 	TextSize = 20,
 	TextXAlignment = Enum.TextXAlignment.Left,
-	Position = UDim2.new(0, 0, 0, 426),
+	Position = UDim2.new(0, 0, 0, 466),
 	Size = UDim2.new(1, 0, 0, 26),
 	Parent = main,
 })
@@ -193,8 +208,8 @@ local logText = create("TextLabel", {
 	TextWrapped = true,
 	TextXAlignment = Enum.TextXAlignment.Left,
 	TextYAlignment = Enum.TextYAlignment.Top,
-	Position = UDim2.new(0, 0, 0, 456),
-	Size = UDim2.new(1, 0, 1, -456),
+	Position = UDim2.new(0, 0, 0, 496),
+	Size = UDim2.new(1, 0, 1, -496),
 	Parent = main,
 })
 
@@ -215,6 +230,30 @@ end
 
 local function localTurn()
 	local playerState = findCurrentPlayer()
+	return playerState and playerState.userId == localPlayer.UserId
+end
+
+local function pendingCard()
+	return currentState and currentState.pendingCard
+end
+
+local function pendingCardPlayer()
+	local pending = pendingCard()
+	return pending and currentState.players[pending.playerId] or nil
+end
+
+local function localPendingCard()
+	local playerState = pendingCardPlayer()
+	return playerState and playerState.userId == localPlayer.UserId
+end
+
+local function localReverseChoice()
+	local choice = currentState and currentState.pendingReverseChoice
+	if not choice then
+		return false
+	end
+
+	local playerState = currentState.players[choice.reversePlayerId]
 	return playerState and playerState.userId == localPlayer.UserId
 end
 
@@ -254,6 +293,14 @@ local function render()
 			.. currentState.teams.capys.score
 			.. ", Pelicans "
 			.. currentState.teams.pelicans.score
+	elseif currentState.pendingReverseChoice then
+		local reversePlayer = currentState.players[currentState.pendingReverseChoice.reversePlayerId]
+		local card = currentState.pendingCard
+		turnLabel.Text = string.format("%s can reverse %s: %s", reversePlayer.name, card.title, card.reverseText)
+	elseif currentState.pendingCard then
+		local cardPlayer = pendingCardPlayer()
+		local card = currentState.pendingCard
+		turnLabel.Text = string.format("%s drew %s: %s", cardPlayer.name, card.title, card.text)
 	elseif current then
 		local turnSuffix = isLocalTurn and "Your turn" or "Current turn"
 		turnLabel.Text = string.format("%s: %s (%s team)", turnSuffix, current.name, teamLabel(current.team))
@@ -263,9 +310,14 @@ local function render()
 
 	spinResult.Text = currentState.spinResult and tostring(currentState.spinResult) or "-"
 
-	local canAct = isLocalTurn and not currentState.busy and not currentState.over
-	setButtonEnabled(spinButton, canAct)
-	setButtonEnabled(reverseButton, canAct and current and current.savedReverse)
+	local canSpin = isLocalTurn and not currentState.busy and not currentState.over and not currentState.pendingCard and not currentState.pendingReverseChoice
+	local canPlayCard = localPendingCard() and not currentState.busy and not currentState.pendingReverseChoice
+	local canUseReverse = localReverseChoice() and not currentState.busy
+	spinButton.Text = canPlayCard and "Play card" or "Spin"
+	reverseButton.Text = "Use saved reverse"
+	setButtonEnabled(spinButton, canSpin or canPlayCard)
+	setButtonEnabled(reverseButton, canUseReverse)
+	setButtonEnabled(declineReverseButton, canUseReverse)
 
 	local lines = {
 		string.format("Capys: %d", currentState.teams.capys.score),
@@ -289,14 +341,22 @@ local function render()
 end
 
 spinButton.MouseButton1Click:Connect(function()
-	if localTurn() and currentState and not currentState.busy and not currentState.over then
+	if currentState and localPendingCard() and not currentState.busy and not currentState.pendingReverseChoice then
+		requestPlayCard:FireServer()
+	elseif localTurn() and currentState and not currentState.busy and not currentState.over and not currentState.pendingCard then
 		requestSpin:FireServer()
 	end
 end)
 
 reverseButton.MouseButton1Click:Connect(function()
-	if localTurn() and currentState and not currentState.busy and not currentState.over then
+	if localReverseChoice() and currentState and not currentState.busy and not currentState.over then
 		requestSavedReverse:FireServer()
+	end
+end)
+
+declineReverseButton.MouseButton1Click:Connect(function()
+	if localReverseChoice() and currentState and not currentState.busy and not currentState.over then
+		requestDeclineReverse:FireServer()
 	end
 end)
 
@@ -328,16 +388,18 @@ local function resizeForViewport()
 		spinButton.Size = UDim2.new(1, -92, 0, 36)
 		reverseButton.Position = UDim2.new(0, 92, 0, 122)
 		reverseButton.Size = UDim2.new(1, -92, 0, 36)
-		newRoundButton.Position = UDim2.new(0, 0, 0, 168)
+		declineReverseButton.Position = UDim2.new(0, 92, 0, 164)
+		declineReverseButton.Size = UDim2.new(1, -92, 0, 30)
+		newRoundButton.Position = UDim2.new(0, 0, 0, 204)
 		newRoundButton.Size = UDim2.new(1, 0, 0, 34)
-		teamsLabel.Position = UDim2.new(0, 0, 0, 210)
+		teamsLabel.Position = UDim2.new(0, 0, 0, 244)
 		teamsLabel.Size = UDim2.new(1, 0, 0, 22)
-		scoreText.Position = UDim2.new(0, 0, 0, 236)
+		scoreText.Position = UDim2.new(0, 0, 0, 270)
 		scoreText.Size = UDim2.new(1, 0, 0, 58)
-		logLabel.Position = UDim2.new(0, 0, 0, 300)
+		logLabel.Position = UDim2.new(0, 0, 0, 334)
 		logLabel.Size = UDim2.new(1, 0, 0, 22)
-		logText.Position = UDim2.new(0, 0, 0, 324)
-		logText.Size = UDim2.new(1, 0, 0, 22)
+		logText.Position = UDim2.new(0, 0, 0, 358)
+		logText.Size = UDim2.new(1, 0, 0, 2)
 	else
 		main.AnchorPoint = Vector2.new(1, 0)
 		main.Position = UDim2.new(1, -18, 0, 18)
@@ -354,16 +416,18 @@ local function resizeForViewport()
 		spinButton.Size = UDim2.new(1, -118, 0, 44)
 		reverseButton.Position = UDim2.new(0, 118, 0, 158)
 		reverseButton.Size = UDim2.new(1, -118, 0, 44)
-		newRoundButton.Position = UDim2.new(0, 0, 0, 214)
+		declineReverseButton.Position = UDim2.new(0, 118, 0, 208)
+		declineReverseButton.Size = UDim2.new(1, -118, 0, 38)
+		newRoundButton.Position = UDim2.new(0, 0, 0, 258)
 		newRoundButton.Size = UDim2.new(1, 0, 0, 40)
-		teamsLabel.Position = UDim2.new(0, 0, 0, 270)
+		teamsLabel.Position = UDim2.new(0, 0, 0, 310)
 		teamsLabel.Size = UDim2.new(1, 0, 0, 26)
-		scoreText.Position = UDim2.new(0, 0, 0, 300)
+		scoreText.Position = UDim2.new(0, 0, 0, 340)
 		scoreText.Size = UDim2.new(1, 0, 0, 112)
-		logLabel.Position = UDim2.new(0, 0, 0, 426)
+		logLabel.Position = UDim2.new(0, 0, 0, 466)
 		logLabel.Size = UDim2.new(1, 0, 0, 26)
-		logText.Position = UDim2.new(0, 0, 0, 456)
-		logText.Size = UDim2.new(1, 0, 1, -456)
+		logText.Position = UDim2.new(0, 0, 0, 496)
+		logText.Size = UDim2.new(1, 0, 1, -496)
 	end
 end
 

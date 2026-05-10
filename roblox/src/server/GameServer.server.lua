@@ -21,6 +21,8 @@ local stateChanged = remoteEvent("StateChanged")
 local requestSpin = remoteEvent("RequestSpin")
 local requestNewRound = remoteEvent("RequestNewRound")
 local requestSavedReverse = remoteEvent("RequestSavedReverse")
+local requestPlayCard = remoteEvent("RequestPlayCard")
+local requestDeclineReverse = remoteEvent("RequestDeclineReverse")
 
 local boardModel
 local spaceParts = {}
@@ -232,6 +234,18 @@ local function publicState()
 		})
 	end
 
+	local pendingCard
+	if state.pendingCard then
+		local card = Config.CardById(state.pendingCard.cardId)
+		pendingCard = {
+			playerId = state.pendingCard.playerId,
+			cardId = state.pendingCard.cardId,
+			title = card and card.title or state.pendingCard.cardId,
+			text = card and card.text or "",
+			reverseText = card and card.reverseText or "",
+		}
+	end
+
 	return {
 		players = players,
 		teams = state.teams,
@@ -244,6 +258,9 @@ local function publicState()
 		winner = state.winner,
 		boardSpaces = Config.BoardSpaces,
 		teamInfo = Config.Teams,
+		pendingCard = pendingCard,
+		pendingReverseChoice = state.pendingReverseChoice,
+		deckLeft = #state.deck,
 	}
 end
 
@@ -283,7 +300,24 @@ local function movePlayer(playerState, amount, source)
 	end
 
 	local finish = #Config.BoardSpaces
-	playerState.position = math.clamp(playerState.position + amount, 1, finish)
+	local position = playerState.position
+	if amount > 0 then
+		local direction = 1
+		for _ = 1, amount do
+			if position >= finish then
+				direction = -1
+			end
+			position += direction
+			if position >= finish then
+				position = finish
+				direction = -1
+			end
+		end
+	else
+		position = math.max(1, position + amount)
+	end
+
+	playerState.position = math.clamp(position, 1, finish)
 	if playerState.position == finish then
 		playerState.finished = true
 		addLog(playerState.name .. " reached the finish.")
@@ -317,51 +351,48 @@ local function switchPlacesWithLeader(playerState)
 	addLog(playerState.name .. " switched places with " .. leader.name .. ".")
 end
 
-local function moveToPreviousMystery(playerState)
-	for index = playerState.position - 1, 1, -1 do
-		if Config.BoardSpaces[index].type == "mystery" then
-			playerState.position = index
-			addLog(playerState.name .. " slid back to a mystery card.")
-			return
-		end
-	end
-
-	playerState.position = 1
-	addLog(playerState.name .. " slid back to start.")
-end
-
 local drawMystery
 local resolveSpace
+local endTurn
 
-local function applyCard(cardId, playerState)
+local function applyCard(cardId, playerState, reversed)
 	if cardId == "MoveForward" then
-		movePlayer(playerState, 3, "card")
+		movePlayer(playerState, reversed and -3 or 3, "card")
 	elseif cardId == "MoveBackward" then
-		movePlayer(playerState, -3, "card")
+		movePlayer(playerState, reversed and 1 or -1, "card")
 	elseif cardId == "Reverse" then
-		state.direction *= -1
-		addLog("Play order reversed.")
+		playerState.savedReverse = true
+		addLog(playerState.name .. " saved a reverse card.")
 	elseif cardId == "BackToStart" then
-		playerState.position = 1
-		addLog(playerState.name .. " went back to start.")
+		playerState.position = reversed and #Config.BoardSpaces or 1
+		addLog(playerState.name .. (reversed and " went to Finish." or " went back to start."))
+		if playerState.position == #Config.BoardSpaces then
+			playerState.finished = true
+			checkWinner()
+		end
 	elseif cardId == "PlusPoints" then
-		addPoints(playerState.team, 5)
+		addPoints(playerState.team, reversed and -5 or 5)
 	elseif cardId == "MinusPoints" then
-		addPoints(playerState.team, -4)
+		addPoints(playerState.team, reversed and 4 or -4)
 	elseif cardId == "SkipTurn" then
 		local nextPlayer = nextLivingPlayer()
 		nextPlayer.skip = true
 		addLog(nextPlayer.name .. " will skip a turn.")
 	elseif cardId == "Oops" then
-		moveToPreviousMystery(playerState)
+		addLog(playerState.name .. " got an Oops card. Nothing happens.")
 	elseif cardId == "SwitchPoints" then
 		switchPoints()
 	elseif cardId == "DoublePoints" then
-		state.teams[playerState.team].score *= 2
-		addLog(teamLabel(playerState.team) .. " doubled its points.")
+		if reversed then
+			state.teams[playerState.team].score = math.floor(state.teams[playerState.team].score / 2)
+			addLog(teamLabel(playerState.team) .. " points were cut in half.")
+		else
+			state.teams[playerState.team].score *= 2
+			addLog(teamLabel(playerState.team) .. " doubled its points.")
+		end
 	elseif cardId == "PickTwoMoreCards" then
-		drawMystery(playerState, true)
-		drawMystery(playerState, true)
+		state.queuedMysteryDraws += 2
+		addLog("Two more mystery cards are waiting.")
 	elseif cardId == "SwitchPlaces" then
 		switchPlacesWithLeader(playerState)
 	end
@@ -369,26 +400,82 @@ end
 
 drawMystery = function(playerState, chained)
 	if #state.deck == 0 then
-		state.deck = shuffle(state.discard)
-		state.discard = {}
-		addLog("Mystery deck reshuffled.")
-	end
-
-	if #state.deck == 0 then
-		state.deck = buildDeck()
+		addLog("No mystery cards are left.")
+		return
 	end
 
 	local cardId = table.remove(state.deck)
 	local card = Config.CardById(cardId)
-	table.insert(state.discard, cardId)
 	addLog(playerState.name .. " drew " .. card.title .. ": " .. card.text)
-	applyCard(cardId, playerState)
+	state.pendingCard = {
+		playerId = playerState.id,
+		cardId = cardId,
+		startingPosition = playerState.position,
+		chained = chained,
+		reverseOffered = false,
+	}
+	broadcast()
+end
 
-	if not chained and not state.over then
-		local space = Config.BoardSpaces[playerState.position]
-		if space.type ~= "mystery" and not playerState.finished then
-			resolveSpace(playerState)
+local function canReverseCard(cardId)
+	local card = Config.CardById(cardId)
+	return card and card.reversible
+end
+
+local function nextSavedReverseResponder(pending)
+	if not pending or not canReverseCard(pending.cardId) then
+		return nil
+	end
+
+	local cardPlayer = state.players[pending.playerId]
+	if not cardPlayer then
+		return nil
+	end
+
+	for step = 1, #state.players do
+		local candidate = state.players[wrap(cardPlayer.id + state.direction * step, #state.players)]
+		if candidate.team ~= cardPlayer.team and candidate.savedReverse and not candidate.finished then
+			return candidate
 		end
+	end
+
+	return nil
+end
+
+local function completePendingCard(reversed)
+	local pending = state.pendingCard
+	if not pending or state.over then
+		return
+	end
+
+	local playerState = state.players[pending.playerId]
+	state.pendingCard = nil
+	state.pendingReverseChoice = nil
+	table.insert(state.discard, pending.cardId)
+	addLog(playerState.name .. " played " .. Config.CardById(pending.cardId).title .. (reversed and " reversed." or "."))
+	applyCard(pending.cardId, playerState, reversed)
+
+	local keepsTurn = false
+	if not state.over and playerState and not playerState.finished then
+		local space = Config.BoardSpaces[playerState.position]
+		if space.type ~= "mystery" then
+			keepsTurn = resolveSpace(playerState)
+		end
+	end
+
+	if not state.over and not state.pendingCard and not state.pendingReverseChoice and state.queuedMysteryDraws > 0 then
+		state.queuedMysteryDraws -= 1
+		drawMystery(playerState, true)
+		return
+	end
+
+	if keepsTurn and not state.pendingCard and not state.pendingReverseChoice then
+		state.busy = false
+		broadcast()
+	elseif not state.over and not state.pendingCard and not state.pendingReverseChoice then
+		endTurn()
+	else
+		broadcast()
 	end
 end
 
@@ -429,6 +516,7 @@ resolveSpace = function(playerState)
 
 	if space.type == "mystery" then
 		drawMystery(playerState, false)
+		return true
 	end
 
 	if space.spinAgain and not state.over then
@@ -439,7 +527,7 @@ resolveSpace = function(playerState)
 	return false
 end
 
-local function endTurn()
+endTurn = function()
 	state.busy = false
 	if state.over then
 		broadcast()
@@ -501,6 +589,9 @@ local function newRound()
 		direction = 1,
 		deck = buildDeck(),
 		discard = {},
+		queuedMysteryDraws = 0,
+		pendingCard = nil,
+		pendingReverseChoice = nil,
 		busy = false,
 		over = false,
 		roundId = roundCounter,
@@ -515,7 +606,7 @@ local function newRound()
 end
 
 requestSpin.OnServerEvent:Connect(function(player)
-	if not state or state.busy or state.over then
+	if not state or state.busy or state.over or state.pendingCard or state.pendingReverseChoice then
 		return
 	end
 
@@ -553,20 +644,59 @@ requestSpin.OnServerEvent:Connect(function(player)
 	end)
 end)
 
+requestPlayCard.OnServerEvent:Connect(function(player)
+	if not state or state.busy or state.over or not state.pendingCard or state.pendingReverseChoice then
+		return
+	end
+
+	local pending = state.pendingCard
+	local cardPlayer = state.players[pending.playerId]
+	if not cardPlayer or cardPlayer.userId ~= player.UserId then
+		return
+	end
+
+	local reversePlayer = pending.reverseOffered and nil or nextSavedReverseResponder(pending)
+	if reversePlayer then
+		pending.reverseOffered = true
+		state.pendingReverseChoice = {
+			reversePlayerId = reversePlayer.id,
+		}
+		addLog(reversePlayer.name .. " can use a saved reverse.")
+		broadcast()
+		return
+	end
+
+	completePendingCard(false)
+end)
+
 requestSavedReverse.OnServerEvent:Connect(function(player)
-	if not state or state.busy or state.over then
+	if not state or state.busy or state.over or not state.pendingCard or not state.pendingReverseChoice then
 		return
 	end
 
-	local playerState = currentPlayer()
-	if not playerState or playerState.userId ~= player.UserId or not playerState.savedReverse then
+	local reversePlayer = state.players[state.pendingReverseChoice.reversePlayerId]
+	if not reversePlayer or reversePlayer.userId ~= player.UserId or not reversePlayer.savedReverse then
 		return
 	end
 
-	playerState.savedReverse = false
-	state.direction *= -1
-	addLog(playerState.name .. " used a saved reverse.")
-	endTurn()
+	reversePlayer.savedReverse = false
+	addLog(reversePlayer.name .. " used a saved reverse.")
+	completePendingCard(true)
+end)
+
+requestDeclineReverse.OnServerEvent:Connect(function(player)
+	if not state or state.busy or state.over or not state.pendingCard or not state.pendingReverseChoice then
+		return
+	end
+
+	local reversePlayer = state.players[state.pendingReverseChoice.reversePlayerId]
+	if not reversePlayer or reversePlayer.userId ~= player.UserId then
+		return
+	end
+
+	state.pendingReverseChoice = nil
+	addLog(reversePlayer.name .. " kept the saved reverse.")
+	completePendingCard(false)
 end)
 
 local function onPlayerAdded(player)
