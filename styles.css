@@ -353,37 +353,57 @@ select {
   stroke-width: 7;
 }
 
+.space {
+  outline: none;
+}
+
+.space-button-layer {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 140ms cubic-bezier(.2, .85, .22, 1);
+}
+
+.space-raise-shadow {
+  display: none;
+  fill: rgba(42, 37, 33, 0.2);
+  stroke: rgba(42, 37, 33, 0.28);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
 .space.actionable {
   cursor: pointer;
+}
+
+.space.actionable .space-raise-shadow {
+  display: block;
+}
+
+.space.actionable .space-button-layer {
+  transform: translate(calc(var(--raise-x) * 1), calc(var(--raise-y) * 1)) scale(1.07);
+}
+
+.space.actionable.is-pressed .space-button-layer,
+.space.actionable:active .space-button-layer {
+  transform: translate(calc(var(--raise-x) * 0.25), calc(var(--raise-y) * 0.25)) scale(1.015);
+  transition-duration: 70ms;
 }
 
 .space.actionable .space-path {
   fill: #f7df93;
   stroke: #c47b16;
   stroke-width: 8;
-  filter: drop-shadow(0 0 7px rgba(221, 155, 37, 0.65));
+}
+
+.space.actionable:focus-visible .space-path {
+  stroke: #7b4d0d;
+  stroke-width: 9;
 }
 
 .space.actionable .space-label {
   fill: #1f1813;
-}
-
-.space-action-hint {
-  display: none;
-  fill: var(--ink);
-  font-size: 11px;
-  font-weight: 900;
-  text-anchor: middle;
-  dominant-baseline: middle;
-  paint-order: stroke;
-  stroke: rgba(247, 223, 147, 0.95);
-  stroke-width: 4;
-  pointer-events: none;
-  vector-effect: non-scaling-stroke;
-}
-
-.space.actionable .space-action-hint {
-  display: block;
 }
 
 .space-label {

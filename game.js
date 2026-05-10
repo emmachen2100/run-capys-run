@@ -154,38 +154,43 @@ function renderBoard() {
     const outerEnd = growFromFace(track, end, track.thickness);
     const label = growFromFace(track, mid, track.labelOffset);
     const token = growFromFace(track, mid, track.tokenOffset);
-    const hint = growFromFace(track, mid, track.hintOffset);
+    const lift = liftVector(track, mid, track.raiseOffset);
     const type = space.type === "save-reverse" ? "reverse save-reverse" : space.type;
 
     const group = createSvgElement("g");
     group.classList.add("space", ...type.split(" "));
     group.dataset.index = index;
+    group.style.setProperty("--raise-x", `${lift.x}px`);
+    group.style.setProperty("--raise-y", `${lift.y}px`);
     group.setAttribute("aria-label", spaceTooltip(space, index));
 
     const title = createSvgElement("title");
     title.textContent = spaceTooltip(space, index);
 
-    const path = createSvgElement("path");
-    path.classList.add("space-path");
-    path.setAttribute("d", [
+    const pathData = [
       `M ${innerStart.x} ${innerStart.y}`,
       `Q ${innerMid.x} ${innerMid.y} ${innerEnd.x} ${innerEnd.y}`,
       `L ${outerEnd.x} ${outerEnd.y}`,
       `Q ${outerMid.x} ${outerMid.y} ${outerStart.x} ${outerStart.y}`,
       "Z"
-    ].join(" "));
+    ].join(" ");
+
+    const shadow = createSvgElement("path");
+    shadow.classList.add("space-raise-shadow");
+    shadow.setAttribute("d", pathData);
+
+    const buttonLayer = createSvgElement("g");
+    buttonLayer.classList.add("space-button-layer");
+
+    const path = createSvgElement("path");
+    path.classList.add("space-path");
+    path.setAttribute("d", pathData);
 
     const text = createSvgElement("text");
     text.classList.add("space-label");
     text.setAttribute("x", label.x);
     text.setAttribute("y", label.y);
     appendSpaceLabel(text, space.label);
-
-    const actionHint = createSvgElement("text");
-    actionHint.classList.add("space-action-hint");
-    actionHint.setAttribute("x", hint.x);
-    actionHint.setAttribute("y", hint.y);
-    actionHint.textContent = "Tap!";
 
     const tokens = createSvgElement("g");
     tokens.classList.add("svg-tokens");
@@ -197,8 +202,10 @@ function renderBoard() {
 
     group.addEventListener("click", onSpacePress);
     group.addEventListener("keydown", onSpaceKeydown);
+    group.addEventListener("pointerdown", onSpacePointerDown);
 
-    group.append(title, path, text, tokens, actionHint);
+    buttonLayer.append(path, text, tokens);
+    group.append(title, shadow, buttonLayer);
     svg.appendChild(group);
   });
 
@@ -217,7 +224,7 @@ function buildTrackGeometry(mobile) {
     thickness: mobile ? 118 : 125,
     labelOffset: mobile ? 65 : 68,
     tokenOffset: mobile ? 90 : 95,
-    hintOffset: mobile ? 102 : 108
+    raiseOffset: mobile ? 12 : 14
   };
 }
 
@@ -341,6 +348,17 @@ function growFromFace(track, degrees, amount) {
   };
 }
 
+function liftVector(track, degrees, amount) {
+  const point = faceCurvePoint(track, degrees);
+  const dx = point.x - track.center.x;
+  const dy = point.y - track.center.y;
+  const distance = Math.hypot(dx, dy) || 1;
+  return {
+    x: roundPoint(dx / distance * amount),
+    y: roundPoint(dy / distance * amount)
+  };
+}
+
 function trackPoint(curve, degrees) {
   const radians = degrees * Math.PI / 180;
   const sidePinch = (curve.sidePinch || 0) * Math.abs(Math.cos(radians)) ** 8;
@@ -413,12 +431,24 @@ function onSpacePress(event) {
   const index = Number(event.currentTarget.dataset.index);
   if (!isActionableSpace(index)) return;
   event.preventDefault();
+  clearPressedSpaces();
   playPendingMove();
 }
 
 function onSpaceKeydown(event) {
   if (event.key !== "Enter" && event.key !== " ") return;
   onSpacePress(event);
+}
+
+function onSpacePointerDown(event) {
+  if (!isActionableSpace(Number(event.currentTarget.dataset.index))) return;
+  event.currentTarget.classList.add("is-pressed");
+}
+
+function clearPressedSpaces() {
+  document.querySelectorAll(".space.is-pressed").forEach((spaceEl) => {
+    spaceEl.classList.remove("is-pressed");
+  });
 }
 
 function svgPlayerToken(player, tokenIndex, tokenCount) {
@@ -607,7 +637,7 @@ function updatePendingActions() {
   if (state.pendingMove) {
     pendingMoveEl.hidden = false;
     pendingMoveTitleEl.textContent = state.pendingMove.label;
-    pendingMoveHelpEl.textContent = `Tap the glowing board space to ${actionButtonLabel(state.pendingMove)}.`;
+    pendingMoveHelpEl.textContent = `Press the raised board space to ${actionButtonLabel(state.pendingMove)}.`;
   } else {
     pendingMoveEl.hidden = true;
   }
@@ -1173,5 +1203,7 @@ window.addEventListener("resize", () => {
   renderBoard();
   updateUi();
 });
+window.addEventListener("pointerup", clearPressedSpaces);
+window.addEventListener("pointercancel", clearPressedSpaces);
 
 createGame();
