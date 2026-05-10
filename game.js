@@ -29,6 +29,8 @@ const mysteryCardPopupEl = document.querySelector("#mystery-card-popup");
 const mysteryCardPlayerEl = document.querySelector("#mystery-card-player");
 const mysteryCardTitleEl = document.querySelector("#mystery-card-title");
 const mysteryCardTextEl = document.querySelector("#mystery-card-text");
+const mysteryCardPrimaryEl = document.querySelector("#mystery-card-primary");
+const mysteryCardSecondaryEl = document.querySelector("#mystery-card-secondary");
 const pendingMoveEl = document.querySelector("#pending-move");
 const pendingMoveTitleEl = document.querySelector("#pending-move-title");
 const pendingMoveHelpEl = document.querySelector("#pending-move-help");
@@ -64,16 +66,55 @@ const boardSpaces = [
 ];
 
 const cardBlueprints = [
-  ...repeatCard(3, { title: "Move forward", text: "Move forward 3 spaces.", reverseMoveAmount: 3, apply: async (game, player) => movePlayer(game, player, 3, "card") }),
-  ...repeatCard(3, { title: "Move backward", text: "Move back 1 space.", reverseMoveAmount: -1, apply: async (game, player) => movePlayer(game, player, -1, "card") }),
+  ...repeatCard(3, {
+    title: "Move forward",
+    text: "Move forward 3 spaces.",
+    reverseText: "Move backward 3 spaces instead.",
+    apply: async (game, player) => movePlayer(game, player, 3, "card"),
+    reverseApply: async (game, player) => movePlayer(game, player, -3, "card")
+  }),
+  ...repeatCard(3, {
+    title: "Move backward",
+    text: "Move back 1 space.",
+    reverseText: "Move forward 1 space instead.",
+    apply: async (game, player) => movePlayer(game, player, -1, "card"),
+    reverseApply: async (game, player) => movePlayer(game, player, 1, "card")
+  }),
   ...repeatCard(3, { title: "Reverse", text: "Save this reverse card for later.", apply: (game, player) => { player.savedReverse = true; addLog(`${player.name} saved a reverse card.`); } }),
-  ...repeatCard(3, { title: "Back to start", text: "Go back to start.", apply: async (game, player) => movePlayerTo(game, player, 0, "card") }),
-  ...repeatCard(7, { title: "+ points", text: "Add 5 points to your team.", apply: (game, player) => addPoints(game, player.team, 5) }),
-  ...repeatCard(4, { title: "- points", text: "Lose 4 points from your team.", apply: (game, player) => addPoints(game, player.team, -4) }),
+  ...repeatCard(3, {
+    title: "Back to start",
+    text: "Go back to start.",
+    reverseText: "Go to Finish instead.",
+    apply: async (game, player) => movePlayerTo(game, player, 0, "card"),
+    reverseApply: async (game, player) => movePlayerTo(game, player, boardSpaces.length - 1, "card")
+  }),
+  ...repeatCard(7, {
+    title: "+ points",
+    text: "Add 5 points to your team.",
+    reverseText: "Lose 5 points instead.",
+    apply: (game, player) => addPoints(game, player.team, 5),
+    reverseApply: (game, player) => addPoints(game, player.team, -5)
+  }),
+  ...repeatCard(4, {
+    title: "- points",
+    text: "Lose 4 points from your team.",
+    reverseText: "Add 4 points instead.",
+    apply: (game, player) => addPoints(game, player.team, -4),
+    reverseApply: (game, player) => addPoints(game, player.team, 4)
+  }),
   { title: "Skip turn", text: "The next player skips a turn.", apply: (game) => { const next = nextLivingPlayer(game); next.skip = true; addLog(`${next.name} will skip a turn.`); } },
   ...repeatCard(3, { title: "Oops card", text: "Nothing happens.", apply: (game, player) => addLog(`${player.name} got an Oops card. Nothing happens.`) }),
   ...repeatCard(2, { title: "Switch points", text: "Switch team scores.", apply: switchPoints }),
-  { title: "Double points", text: "Double your team's points.", apply: (game, player) => { game.teams[player.team].score *= 2; addLog(`${teamLabel(player.team)} doubled its points.`); } },
+  {
+    title: "Double points",
+    text: "Double your team's points.",
+    reverseText: "Cut that team's points in half instead.",
+    apply: (game, player) => { game.teams[player.team].score *= 2; addLog(`${teamLabel(player.team)} doubled its points.`); },
+    reverseApply: (game, player) => {
+      game.teams[player.team].score = Math.floor(game.teams[player.team].score / 2);
+      addLog(`${teamLabel(player.team)} points were cut in half.`);
+    }
+  },
   { title: "Pick 2 more cards", text: "Draw two more mystery cards.", apply: (game) => { game.queuedMysteryDraws += 2; addLog("Two more mystery cards are waiting."); } },
   { title: "Switch places", text: "Switch places with another player.", apply: switchPlacesWithLeader }
 ];
@@ -114,6 +155,7 @@ function createGame() {
     deck: shuffle(cardBlueprints),
     usedCards: [],
     pendingCard: null,
+    pendingReverseChoice: null,
     pendingMove: null,
     queuedMysteryDraws: 0,
     lastCard: null,
@@ -391,9 +433,8 @@ function updateUi() {
   spinnerEl.setAttribute("aria-label", setup ? "Spin for teams" : "Spin");
   spinnerPlayerTokenEl.hidden = !canSpin;
   spinnerPlayerTokenEl.innerHTML = canSpin ? playerTokenHtml(current, "spinner-turn-token") : "";
-  const reversePlayer = savedReverseResponder();
-  reverseButton.textContent = reversePlayer ? `Use ${reversePlayer.name}'s reverse` : "Use saved reverse";
-  reverseButton.disabled = setup || state.over || !reversePlayer;
+  reverseButton.hidden = true;
+  reverseButton.disabled = true;
 
   updateSpaces(current);
   updateTeams();
@@ -627,6 +668,9 @@ function boardScoreCardHtml({ team, player, corner }) {
   const powerText = powers > 0 ? `${powers} power ready` : `${pointsUntilPower(team)} to power`;
   const place = player.finished ? "Finished" : `Space ${player.position + 1}`;
   const actionClass = boardScoreActionClass(player);
+  const savedReverse = player.savedReverse
+    ? `<div class="board-saved-reverse"><strong>Reverse</strong><span>saved</span></div>`
+    : "";
 
   return `
     <div class="board-score-card ${corner} ${team} ${actionClass}">
@@ -638,6 +682,7 @@ function boardScoreCardHtml({ team, player, corner }) {
         <strong>${score}</strong>
       </div>
       <div class="board-score-player">${player.name} · ${place}</div>
+      ${savedReverse}
       <div class="board-power-meter" aria-label="${teamLabel(team)} 15 point power progress">
         <span style="width: ${progress}%"></span>
       </div>
@@ -647,7 +692,9 @@ function boardScoreCardHtml({ team, player, corner }) {
 }
 
 function boardScoreActionClass(player) {
-  if (state.phase !== "race" || state.over || state.pendingCard) return "";
+  if (state.phase !== "race" || state.over) return "";
+  if (state.pendingReverseChoice?.reversePlayerId === player.id) return "needs-action";
+  if (state.pendingCard) return "";
   return state.pendingMove?.playerId === player.id ? "needs-action" : "";
 }
 
@@ -692,21 +739,42 @@ function updateMysteryEar() {
 }
 
 function updatePendingActions() {
-  if (state.pendingCard) {
+  if (state.pendingReverseChoice) {
+    const reversePlayer = state.players[state.pendingReverseChoice.reversePlayerId];
+    const cardPlayer = state.players[state.pendingCard.playerId];
+    const card = state.pendingCard.card;
+    pendingCardEl.hidden = true;
+    mysteryCardPopupEl.hidden = false;
+    mysteryCardPopupEl.classList.add("reverse-choice");
+    mysteryCardPlayerEl.innerHTML = `
+      ${playerTokenHtml(reversePlayer, "mystery-popup-token")}
+      <span>${reversePlayer.name}'s saved card</span>
+    `;
+    mysteryCardTitleEl.textContent = "Use reverse?";
+    mysteryCardTextEl.textContent = `${cardPlayer.name} is playing ${card.title}. ${card.reverseText}`;
+    mysteryCardPrimaryEl.textContent = "Use reverse";
+    mysteryCardSecondaryEl.textContent = "Let card play";
+    mysteryCardSecondaryEl.hidden = false;
+  } else if (state.pendingCard) {
     const player = state.players[state.pendingCard.playerId];
     pendingCardEl.hidden = true;
     pendingCardTitleEl.textContent = state.pendingCard.card.title;
     pendingCardTextEl.textContent = state.pendingCard.card.text;
     mysteryCardPopupEl.hidden = false;
+    mysteryCardPopupEl.classList.remove("reverse-choice");
     mysteryCardPlayerEl.innerHTML = `
       ${playerTokenHtml(player, "mystery-popup-token")}
       <span>${player.name} drew</span>
     `;
     mysteryCardTitleEl.textContent = state.pendingCard.card.title;
     mysteryCardTextEl.textContent = state.pendingCard.card.text;
+    mysteryCardPrimaryEl.textContent = "Play card";
+    mysteryCardSecondaryEl.hidden = true;
   } else {
     pendingCardEl.hidden = true;
     mysteryCardPopupEl.hidden = true;
+    mysteryCardPopupEl.classList.remove("reverse-choice");
+    mysteryCardSecondaryEl.hidden = true;
   }
 
   if (state.pendingMove) {
@@ -1056,7 +1124,7 @@ async function drawMystery(game, player, chained = false) {
 }
 
 function hasPendingAction() {
-  return Boolean(state.pendingCard || state.pendingMove);
+  return Boolean(state.pendingCard || state.pendingReverseChoice || state.pendingMove);
 }
 
 function hasPendingSpinAgain() {
@@ -1067,25 +1135,54 @@ function canSpinNow() {
   return !state.busy && !state.over && (!hasPendingAction() || hasPendingSpinAgain());
 }
 
-function savedReverseResponder() {
-  if (state.phase !== "race" || state.over || !state.pendingCard) return null;
-  const cardPlayer = state.players[state.pendingCard.playerId];
-  if (!cardPlayer || !Number.isFinite(state.pendingCard.card.reverseMoveAmount)) return null;
-  return state.players.find((player) => {
-    return player.team !== cardPlayer.team && player.savedReverse && !player.finished;
-  }) || null;
+function nextSavedReverseResponder(pending) {
+  if (state.phase !== "race" || state.over || !pending || !canReverseCard(pending.card)) return null;
+  const cardPlayer = state.players[pending.playerId];
+  if (!cardPlayer) return null;
+
+  for (let step = 1; step <= state.players.length; step += 1) {
+    const player = state.players[wrap(cardPlayer.id + state.direction * step, state.players.length)];
+    if (player.team !== cardPlayer.team && player.savedReverse && !player.finished) return player;
+  }
+
+  return null;
+}
+
+function canReverseCard(card) {
+  return typeof card?.reverseApply === "function";
 }
 
 async function playPendingCard() {
   const pending = state.pendingCard;
+  if (!pending || state.over || state.pendingReverseChoice) return;
+
+  const reversePlayer = pending.reverseOffered ? null : nextSavedReverseResponder(pending);
+  if (reversePlayer) {
+    pending.reverseOffered = true;
+    state.pendingReverseChoice = { reversePlayerId: reversePlayer.id };
+    addLog(`${reversePlayer.name} can use a saved reverse.`);
+    updateUi();
+    return;
+  }
+
+  await completePendingCard(false);
+}
+
+async function completePendingCard(reversed) {
+  const pending = state.pendingCard;
   if (!pending || state.over) return;
   const player = state.players[pending.playerId];
   state.pendingCard = null;
+  state.pendingReverseChoice = null;
   state.usedCards.push(pending.card);
   if (state.lastCard === pending.card) state.lastCard = null;
-  addLog(`${player.name} played ${pending.card.title}.`);
+  addLog(`${player.name} played ${pending.card.title}${reversed ? " reversed" : ""}.`);
   updateUi();
-  await pending.card.apply(state, player);
+  if (reversed) {
+    await pending.card.reverseApply(state, player);
+  } else {
+    await pending.card.apply(state, player);
+  }
   await finishPendingAction(player, pending.startingPosition);
 }
 
@@ -1222,19 +1319,26 @@ function switchPlacesWithLeader(game, player) {
 
 async function useSavedReverse() {
   const pending = state.pendingCard;
-  const player = savedReverseResponder();
-  if (!pending || !player) return;
+  const choice = state.pendingReverseChoice;
+  if (!pending || !choice || state.over) return;
+  const player = state.players[choice.reversePlayerId];
   const cardPlayer = state.players[pending.playerId];
-  const amount = pending.card.reverseMoveAmount;
-  const startingPosition = player.position;
-  state.pendingCard = null;
-  state.usedCards.push(pending.card);
-  if (state.lastCard === pending.card) state.lastCard = null;
+  if (!player?.savedReverse || !canReverseCard(pending.card)) return;
+
   player.savedReverse = false;
   addLog(`${player.name} used a saved reverse on ${cardPlayer.name}'s ${pending.card.title}.`);
+  await completePendingCard(true);
+}
+
+async function declineSavedReverse() {
+  const pending = state.pendingCard;
+  const choice = state.pendingReverseChoice;
+  if (!pending || !choice || state.over) return;
+  const player = state.players[choice.reversePlayerId];
+  state.pendingReverseChoice = null;
+  addLog(`${player.name} kept the saved reverse.`);
   updateUi();
-  await movePlayer(state, player, amount, "card");
-  await finishPendingAction(player, startingPosition);
+  await completePendingCard(false);
 }
 
 function endTurn() {
@@ -1281,12 +1385,28 @@ function onSpinnerKeydown(event) {
   spin();
 }
 
+function onMysteryPopupClick(event) {
+  if (event.target.closest("button")) return;
+  if (state.pendingReverseChoice) return;
+  playPendingCard();
+}
+
+function onMysteryPrimaryClick() {
+  if (state.pendingReverseChoice) {
+    useSavedReverse();
+    return;
+  }
+  playPendingCard();
+}
+
 spinButton.addEventListener("click", spin);
 spinnerEl.addEventListener("click", spin);
 spinnerEl.addEventListener("keydown", onSpinnerKeydown);
 reverseButton.addEventListener("click", useSavedReverse);
 playCardButton.addEventListener("click", playPendingCard);
-mysteryCardPopupEl.addEventListener("click", playPendingCard);
+mysteryCardPopupEl.addEventListener("click", onMysteryPopupClick);
+mysteryCardPrimaryEl.addEventListener("click", onMysteryPrimaryClick);
+mysteryCardSecondaryEl.addEventListener("click", declineSavedReverse);
 powerUpButton.addEventListener("click", usePowerUp);
 powerDownButton.addEventListener("click", usePowerDown);
 newGameButton.addEventListener("click", createGame);

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Run, Capys, Run</title>
-    <link rel="stylesheet" href="styles.css?v=20260510-spinner-center-token">
+    <link rel="stylesheet" href="styles.css?v=20260510-reverse-choice-popup">
   </head>
   <body>
     <main class="app-shell">
@@ -59,13 +59,16 @@
               </div>
               <div id="spaces" class="spaces"></div>
               <div id="board-scores" class="board-scores" aria-label="Team scores"></div>
-              <button id="mystery-card-popup" class="mystery-card-popup" type="button" hidden>
+              <div id="mystery-card-popup" class="mystery-card-popup" hidden>
                 <span class="eyebrow">Mystery card</span>
                 <span id="mystery-card-player" class="mystery-card-player"></span>
                 <strong id="mystery-card-title"></strong>
                 <span id="mystery-card-text"></span>
-                <span class="mystery-card-action">Play card</span>
-              </button>
+                <span class="mystery-card-actions">
+                  <button id="mystery-card-primary" class="mystery-card-action" type="button">Play card</button>
+                  <button id="mystery-card-secondary" class="mystery-card-action secondary" type="button" hidden>Do not use reverse</button>
+                </span>
+              </div>
             </div>
           </section>
 
@@ -120,7 +123,7 @@
         </div>
         <div id="rules" class="rules" hidden>
           <p>First spin to pick teams. In a 2 player game, the highest spin becomes the Capys team. In a 4 player game, players 1 and 2 add their spins, players 3 and 4 add theirs, and the higher total becomes the Capys team.</p>
-          <p>Spin and move counter-clockwise around the capybara board. Pieces move one space at a time. If a spin goes past Finish, the piece bounces back the extra spaces. When you land on a labeled square, press the raised board space to use it. Mystery spaces draw a card right away, then the card pops up so the player who drew it can read it and tap it to play. A saved reverse can only be used when the other team draws a movement card, and the reverse holder gets that movement instead.</p>
+          <p>Spin and move counter-clockwise around the capybara board. Pieces move one space at a time. If a spin goes past Finish, the piece bounces back the extra spaces. When you land on a labeled square, press the raised board space to use it. Mystery spaces draw a card right away, then the card pops up so the player who drew it can read it and tap it to play. A saved reverse can be used when the other team plays a mystery card with a clear opposite, turning moves and points the other way.</p>
           <p>Every 15 points unlocks a choice: move your current player up 5 spaces or move the other team's leading player down 5 spaces.</p>
           <p>A team wins as soon as one of its players reaches the Finish square.</p>
         </div>
@@ -132,6 +135,6 @@
       </section>
     </main>
 
-    <script src="game.js?v=20260510-spinner-center-token"></script>
+    <script src="game.js?v=20260510-reverse-choice-popup"></script>
   </body>
 </html>

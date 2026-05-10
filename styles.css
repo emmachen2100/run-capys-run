@@ -302,6 +302,31 @@ select {
   line-height: 1.12;
 }
 
+.board-saved-reverse {
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 6px;
+  padding: 4px 7px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transform: rotate(-3deg);
+  border: 2px solid var(--line);
+  background: #fffaf1;
+  box-shadow: 2px 2px 0 rgba(42, 37, 33, 0.18);
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.board-saved-reverse strong {
+  font-size: 0.76rem;
+}
+
+.board-saved-reverse span {
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
 .board-setup-status {
   color: var(--ink);
   font-size: 0.82rem;
@@ -387,10 +412,16 @@ select {
   line-height: 0.95;
 }
 
-.mystery-card-popup span:not(.eyebrow):not(.mystery-card-player):not(.mystery-card-action) {
+.mystery-card-popup span:not(.eyebrow):not(.mystery-card-player):not(.mystery-card-actions):not(.mystery-card-action) {
   color: var(--muted);
   font-size: 1rem;
   line-height: 1.25;
+}
+
+.mystery-card-actions {
+  width: 100%;
+  display: grid;
+  gap: 8px;
 }
 
 .mystery-card-action {
@@ -401,6 +432,10 @@ select {
   background: var(--sun);
   box-shadow: 3px 3px 0 rgba(42, 37, 33, 0.18);
   font-weight: 900;
+}
+
+.mystery-card-action.secondary {
+  background: #fff8e8;
 }
 
 .track-svg {
