@@ -274,6 +274,39 @@ select {
   stroke-width: 7;
 }
 
+.space.actionable {
+  cursor: pointer;
+}
+
+.space.actionable .space-path {
+  fill: #f7df93;
+  stroke: #c47b16;
+  stroke-width: 8;
+  filter: drop-shadow(0 0 7px rgba(221, 155, 37, 0.65));
+}
+
+.space.actionable .space-label {
+  fill: #1f1813;
+}
+
+.space-action-hint {
+  display: none;
+  fill: var(--ink);
+  font-size: 11px;
+  font-weight: 900;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  paint-order: stroke;
+  stroke: rgba(247, 223, 147, 0.95);
+  stroke-width: 4;
+  pointer-events: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.space.actionable .space-action-hint {
+  display: block;
+}
+
 .space-label {
   fill: var(--ink);
   font-size: 12px;
@@ -868,6 +901,10 @@ select {
   margin-bottom: 8px;
   color: var(--muted);
   line-height: 1.25;
+}
+
+.board-space-help {
+  font-weight: 800;
 }
 
 .team-row,

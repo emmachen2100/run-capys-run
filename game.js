@@ -28,7 +28,7 @@ const mysteryCardTitleEl = document.querySelector("#mystery-card-title");
 const mysteryCardTextEl = document.querySelector("#mystery-card-text");
 const pendingMoveEl = document.querySelector("#pending-move");
 const pendingMoveTitleEl = document.querySelector("#pending-move-title");
-const playMoveButton = document.querySelector("#play-move");
+const pendingMoveHelpEl = document.querySelector("#pending-move-help");
 
 const MOVE_STEP_MS = 240;
 
@@ -152,6 +152,7 @@ function renderBoard() {
     const outerEnd = growFromFace(track, end, track.thickness);
     const label = growFromFace(track, mid, track.labelOffset);
     const token = growFromFace(track, mid, track.tokenOffset);
+    const hint = growFromFace(track, mid, track.hintOffset);
     const type = space.type === "save-reverse" ? "reverse save-reverse" : space.type;
 
     const group = createSvgElement("g");
@@ -178,6 +179,12 @@ function renderBoard() {
     text.setAttribute("y", label.y);
     appendSpaceLabel(text, space.label);
 
+    const actionHint = createSvgElement("text");
+    actionHint.classList.add("space-action-hint");
+    actionHint.setAttribute("x", hint.x);
+    actionHint.setAttribute("y", hint.y);
+    actionHint.textContent = "Tap!";
+
     const tokens = createSvgElement("g");
     tokens.classList.add("svg-tokens");
     tokens.setAttribute("aria-hidden", "true");
@@ -186,7 +193,10 @@ function renderBoard() {
     tokensTitle.textContent = spaceTooltip(space, index);
     tokens.appendChild(tokensTitle);
 
-    group.append(title, path, text, tokens);
+    group.addEventListener("click", onSpacePress);
+    group.addEventListener("keydown", onSpaceKeydown);
+
+    group.append(title, path, text, tokens, actionHint);
     svg.appendChild(group);
   });
 
@@ -204,7 +214,8 @@ function buildTrackGeometry(mobile) {
     faceTopY: mobile ? 292 : 184,
     thickness: mobile ? 118 : 125,
     labelOffset: mobile ? 65 : 68,
-    tokenOffset: mobile ? 90 : 95
+    tokenOffset: mobile ? 90 : 95,
+    hintOffset: mobile ? 102 : 108
   };
 }
 
@@ -367,6 +378,8 @@ function updateUi() {
 function updateSpaces(current) {
   document.querySelectorAll(".space").forEach((spaceEl) => {
     const index = Number(spaceEl.dataset.index);
+    const actionable = isActionableSpace(index);
+    const space = boardSpaces[index];
     const occupyingPlayers = state.players
       .filter((player) => player.position === index && !player.finished && state.phase === "race");
     const tokenLayer = spaceEl.querySelector(".svg-tokens");
@@ -375,7 +388,31 @@ function updateSpaces(current) {
       return svgPlayerToken(player, playerIndex, occupyingPlayers.length);
     }));
     spaceEl.classList.toggle("active", state.phase === "race" && index === current.position && !current.finished);
+    spaceEl.classList.toggle("actionable", actionable);
+    spaceEl.setAttribute("tabindex", actionable ? "0" : "-1");
+    spaceEl.setAttribute("role", actionable ? "button" : "group");
+    spaceEl.setAttribute("aria-label", actionable
+      ? `${spaceTooltip(space, index)}. Press this board space to ${actionButtonLabel(state.pendingMove)}.`
+      : spaceTooltip(space, index));
   });
+}
+
+function isActionableSpace(index) {
+  if (!state.pendingMove || state.pendingCard || state.over) return false;
+  const player = state.players[state.pendingMove.playerId];
+  return Boolean(player && !player.finished && player.position === index);
+}
+
+function onSpacePress(event) {
+  const index = Number(event.currentTarget.dataset.index);
+  if (!isActionableSpace(index)) return;
+  event.preventDefault();
+  playPendingMove();
+}
+
+function onSpaceKeydown(event) {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  onSpacePress(event);
 }
 
 function svgPlayerToken(player, tokenIndex, tokenCount) {
@@ -508,7 +545,7 @@ function updatePendingActions() {
   if (state.pendingMove) {
     pendingMoveEl.hidden = false;
     pendingMoveTitleEl.textContent = state.pendingMove.label;
-    playMoveButton.textContent = actionButtonLabel(state.pendingMove);
+    pendingMoveHelpEl.textContent = `Tap the glowing board space to ${actionButtonLabel(state.pendingMove)}.`;
   } else {
     pendingMoveEl.hidden = true;
   }
@@ -1060,7 +1097,6 @@ spinButton.addEventListener("click", spin);
 reverseButton.addEventListener("click", useSavedReverse);
 playCardButton.addEventListener("click", playPendingCard);
 mysteryCardPopupEl.addEventListener("click", playPendingCard);
-playMoveButton.addEventListener("click", playPendingMove);
 powerUpButton.addEventListener("click", usePowerUp);
 powerDownButton.addEventListener("click", usePowerDown);
 newGameButton.addEventListener("click", createGame);
