@@ -2,6 +2,7 @@ const boardEl = document.querySelector("#board");
 const spacesEl = document.querySelector("#spaces");
 const boardScoresEl = document.querySelector("#board-scores");
 const spinnerEl = document.querySelector("#spinner");
+const spinnerPlayerTokenEl = document.querySelector("#spinner-player-token");
 const spinButton = document.querySelector("#spin-button");
 const reverseButton = document.querySelector("#reverse-button");
 const newGameButton = document.querySelector("#new-game");
@@ -388,6 +389,8 @@ function updateUi() {
   spinnerEl.classList.toggle("is-spin-ready", canSpin);
   spinnerEl.setAttribute("aria-disabled", String(!canSpin));
   spinnerEl.setAttribute("aria-label", setup ? "Spin for teams" : "Spin");
+  spinnerPlayerTokenEl.hidden = !canSpin;
+  spinnerPlayerTokenEl.innerHTML = canSpin ? playerTokenHtml(current, "spinner-turn-token") : "";
   const reversePlayer = savedReverseResponder();
   reverseButton.textContent = reversePlayer ? `Use ${reversePlayer.name}'s reverse` : "Use saved reverse";
   reverseButton.disabled = setup || state.over || !reversePlayer;

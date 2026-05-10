@@ -141,7 +141,7 @@ select {
 
 .play-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 370px);
+  grid-template-columns: minmax(0, 1fr);
   gap: clamp(14px, 2vw, 24px);
   margin-top: 18px;
 }
@@ -153,7 +153,7 @@ select {
 .board {
   position: relative;
   width: 100%;
-  min-height: min(74vh, 760px);
+  min-height: min(78vh, 820px);
   aspect-ratio: 1.42;
   overflow: hidden;
   background:
@@ -838,6 +838,7 @@ select {
 
 .side-panel {
   display: grid;
+  grid-template-columns: minmax(260px, 1.1fr) minmax(240px, 1fr) minmax(240px, 1fr) minmax(260px, 1.1fr);
   gap: 14px;
   align-content: start;
 }
@@ -900,6 +901,42 @@ select {
 
 .spinner.is-disabled {
   cursor: default;
+}
+
+.spinner-player-token {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  z-index: 6;
+  width: 48px;
+  height: 46px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.spinner-player-token[hidden] {
+  display: none;
+}
+
+.spinner-turn-token.character-token {
+  position: absolute;
+  inset: 0;
+}
+
+.spinner-turn-token.capy-character .character-art {
+  inset: -8px -2px 0;
+}
+
+.spinner-turn-token.pelican-character .character-art {
+  inset: -2px -12px 2px;
+}
+
+.spinner-turn-token .character-number {
+  right: -3px;
+  bottom: -2px;
+  width: 17px;
+  height: 17px;
+  font-size: 0.62rem;
 }
 
 .board-spinner.is-spin-ready {
@@ -1220,6 +1257,16 @@ select {
     width: 10px;
     height: 10px;
     font-size: 0.4rem;
+  }
+}
+
+@media (max-width: 1120px) {
+  .side-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .event-log {
+    grid-column: 1 / -1;
   }
 }
 
