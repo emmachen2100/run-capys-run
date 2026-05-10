@@ -175,10 +175,7 @@ select {
   min-height: 0;
   aspect-ratio: 1.42;
   overflow: hidden;
-  background:
-    radial-gradient(ellipse at 50% 56%, rgba(216, 163, 123, 0.34) 0 37%, transparent 37.4%),
-    linear-gradient(180deg, #fffdf7, var(--paper-strong));
-  border: 3px solid var(--line);
+  background: transparent;
 }
 
 .spaces {
