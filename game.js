@@ -615,7 +615,6 @@ function actionButtonLabel(action) {
     return `Move ${action.amount}`;
   }
   if (action.kind === "points") return action.label.replace(/\n/g, " ");
-  if (action.kind === "mystery") return "Draw mystery card";
   if (action.kind === "spinAgain") return "Spin again";
   return action.label.replace(/\n/g, " ");
 }
@@ -886,7 +885,9 @@ async function resolveSpace(game, player) {
     });
   }
   if (isMysterySpace(space)) {
-    return queueSpaceAction(game, player, { kind: "mystery", label: space.label });
+    addLog(`${player.name} landed on ${space.label}.`);
+    const drewCard = await drawMystery(game, player);
+    return drewCard || hasPendingAction();
   }
   if (space.spinAgain && !game.over) {
     return queueSpaceAction(game, player, { kind: "spinAgain", label: space.label });
@@ -978,12 +979,6 @@ async function playPendingMove() {
       grantExtraSpin(player);
       return;
     }
-    await finishPendingAction(player, null);
-    return;
-  }
-  if (pending.kind === "mystery") {
-    const drewCard = await drawMystery(state, player);
-    if (drewCard || hasPendingAction()) return;
     await finishPendingAction(player, null);
     return;
   }
