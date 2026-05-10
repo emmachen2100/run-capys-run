@@ -653,6 +653,11 @@ function powerProgressPercent(team) {
 }
 
 function updateEarCharacters() {
+  if (state.phase !== "setup") {
+    earCharactersEl.innerHTML = "";
+    return;
+  }
+
   earCharactersEl.innerHTML = state.players.map((player) => {
     return playerTokenHtml(player, "ear-token");
   }).join("");
