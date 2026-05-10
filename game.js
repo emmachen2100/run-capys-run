@@ -151,7 +151,7 @@ function renderBoard() {
     const outerMid = growFromFace(track, mid, track.thickness);
     const outerEnd = growFromFace(track, end, track.thickness);
     const label = growFromFace(track, mid, track.labelOffset);
-    const token = spaceTokenPoint(innerStart, innerEnd, outerStart, outerEnd);
+    const token = growFromFace(track, mid, track.tokenOffset);
     const type = space.type === "save-reverse" ? "reverse save-reverse" : space.type;
 
     const group = createSvgElement("g");
@@ -203,7 +203,8 @@ function buildTrackGeometry(mobile) {
       : { cx: 500, cy: 378, rx: 360, ry: 224, sidePinch: 0 },
     faceTopY: mobile ? 278 : 168,
     thickness: mobile ? 96 : 98,
-    labelOffset: mobile ? 54 : 55
+    labelOffset: mobile ? 54 : 55,
+    tokenOffset: mobile ? 73 : 74
   };
 }
 
@@ -324,15 +325,6 @@ function growFromFace(track, degrees, amount) {
   return {
     x: roundPoint(point.x + dx / distance * amount),
     y: roundPoint(point.y + dy / distance * amount)
-  };
-}
-
-function spaceTokenPoint(innerStart, innerEnd, outerStart, outerEnd) {
-  const innerWeight = 0.86;
-  const outerWeight = 1 - innerWeight;
-  return {
-    x: roundPoint(((innerStart.x + innerEnd.x) / 2) * innerWeight + ((outerStart.x + outerEnd.x) / 2) * outerWeight),
-    y: roundPoint(((innerStart.y + innerEnd.y) / 2) * innerWeight + ((outerStart.y + outerEnd.y) / 2) * outerWeight)
   };
 }
 
