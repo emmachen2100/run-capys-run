@@ -399,35 +399,39 @@ function svgPlayerToken(player, tokenIndex, tokenCount) {
   image.setAttribute("height", size.height);
   image.setAttribute("preserveAspectRatio", "xMidYMid meet");
 
+  const marker = createSvgElement("circle");
+  marker.classList.add("svg-character-pad");
+  marker.setAttribute("r", size.padRadius);
+
   const badge = createSvgElement("g");
   badge.classList.add("svg-character-badge");
   badge.setAttribute("transform", `translate(${size.badgeX} ${size.badgeY})`);
   const circle = createSvgElement("circle");
-  circle.setAttribute("r", 5.5);
+  circle.setAttribute("r", 4);
   const label = createSvgElement("text");
   label.textContent = player.id + 1;
   label.setAttribute("dy", "0.33em");
   badge.append(circle, label);
 
-  group.append(image, badge);
+  group.append(marker, image, badge);
   return group;
 }
 
 function tokenOffset(tokenIndex, tokenCount) {
   const offsets = {
     1: [{ x: 0, y: 0 }],
-    2: [{ x: -7, y: 0 }, { x: 7, y: 0 }],
-    3: [{ x: 0, y: -7 }, { x: -7, y: 6 }, { x: 7, y: 6 }],
-    4: [{ x: -7, y: -6 }, { x: 7, y: -6 }, { x: -7, y: 6 }, { x: 7, y: 6 }]
+    2: [{ x: -5, y: 0 }, { x: 5, y: 0 }],
+    3: [{ x: 0, y: -5 }, { x: -5, y: 5 }, { x: 5, y: 5 }],
+    4: [{ x: -5, y: -5 }, { x: 5, y: -5 }, { x: -5, y: 5 }, { x: 5, y: 5 }]
   };
   return offsets[tokenCount]?.[tokenIndex] || { x: 0, y: 0 };
 }
 
 function svgCharacterSize(character) {
   if (character === "capy-character") {
-    return { href: "assets/capy-character.png", width: 25, height: 30, badgeX: 11, badgeY: 11 };
+    return { href: "assets/capy-character.png", width: 18, height: 22, badgeX: 7, badgeY: 7, padRadius: 11 };
   }
-  return { href: "assets/pelican-character.png", width: 35, height: 23, badgeX: 13, badgeY: 8 };
+  return { href: "assets/pelican-character.png", width: 25, height: 16, badgeX: 8, badgeY: 5, padRadius: 11 };
 }
 
 function updateTeams() {

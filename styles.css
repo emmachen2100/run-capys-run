@@ -242,6 +242,12 @@ select {
   filter: drop-shadow(1px 2px 0 rgba(42, 37, 33, 0.28));
 }
 
+.svg-character-pad {
+  fill: rgba(255, 250, 241, 0.86);
+  stroke: var(--line);
+  stroke-width: 1.2;
+}
+
 .svg-character-badge circle {
   fill: #fffaf1;
   stroke: var(--line);
@@ -250,7 +256,7 @@ select {
 
 .svg-character-badge text {
   fill: var(--ink);
-  font-size: 7px;
+  font-size: 5px;
   font-weight: 900;
   text-anchor: middle;
 }
