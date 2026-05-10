@@ -382,7 +382,7 @@ function updateUi() {
   turnTeamEl.textContent = setup ? setupRollLabel() : `${teamLabel(current.team)} team`;
   turnTeamEl.className = `team-pill ${setup ? "unassigned" : current.team}`;
   turnHelpEl.textContent = setup ? setupHelpText() : "Move counter-clockwise around the capybara. Use powers before you spin.";
-  const canSpin = !state.busy && !state.over && (!hasPendingAction() || hasPendingSpinAgain());
+  const canSpin = canSpinNow();
   spinButton.textContent = setup ? "Spin for teams" : "Spin";
   spinButton.disabled = !canSpin;
   spinnerEl.classList.toggle("is-disabled", !canSpin);
@@ -810,6 +810,8 @@ function sleep(ms) {
 }
 
 function spin() {
+  if (!canSpinNow()) return;
+
   if (state.phase === "setup") {
     setupSpin();
     return;
@@ -1059,6 +1061,10 @@ function hasPendingAction() {
 
 function hasPendingSpinAgain() {
   return state.pendingMove?.kind === "spinAgain";
+}
+
+function canSpinNow() {
+  return !state.busy && !state.over && (!hasPendingAction() || hasPendingSpinAgain());
 }
 
 function savedReverseResponder() {
