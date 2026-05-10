@@ -111,18 +111,27 @@ do
 		Name = "Board",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		BackgroundTransparency = 1,
-		Position = UDim2.fromScale(0.5, 0.54),
-		Size = UDim2.fromOffset(1100, 700),
+		Position = UDim2.fromScale(0.5, 0.56),
+		Size = UDim2.fromOffset(1000, 700),
 		Parent = rootFrame,
 	})
 	local boardScale = create("UIScale", { Scale = 1, Parent = board })
-	local boardCenter = Vector2.new(550, 360)
+	local boardCenter = Vector2.new(500, 365)
+	local track = {
+		start = 220,
+		span = -260,
+		center = Vector2.new(500, 365),
+		face = { cx = 500, cy = 365, rx = 338, ry = 205 },
+		labelOffset = 52,
+		tokenOffset = 95,
+	}
 
 	local face = create("Frame", {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		BackgroundColor3 = colors.face,
 		Position = UDim2.fromOffset(boardCenter.X, boardCenter.Y + 20),
-		Size = UDim2.fromOffset(610, 350),
+		Size = UDim2.fromOffset(690, 405),
+		ZIndex = 3,
 		Parent = board,
 	})
 	corner(face, UDim.new(0.5, 0))
@@ -136,25 +145,27 @@ do
 			BorderSizePixel = 0,
 			Position = UDim2.fromOffset(position.X, position.Y),
 			Size = UDim2.fromOffset(size.X, size.Y),
+			ZIndex = 4,
 			Parent = board,
 		})
 		corner(part, UDim.new(1, 0))
 		return part
 	end
 
-	facePart("LeftEye", Vector2.new(430, 310), Vector2.new(24, 48), Color3.fromRGB(34, 27, 23))
-	facePart("RightEye", Vector2.new(670, 310), Vector2.new(24, 48), Color3.fromRGB(34, 27, 23))
-	facePart("LeftCheek", Vector2.new(420, 440), Vector2.new(88, 88), Color3.fromRGB(244, 224, 174)).BackgroundTransparency = 0.45
-	facePart("RightCheek", Vector2.new(680, 440), Vector2.new(88, 88), Color3.fromRGB(244, 224, 174)).BackgroundTransparency = 0.45
-	local nose = facePart("Nose", Vector2.new(550, 470), Vector2.new(150, 80), Color3.fromRGB(142, 105, 45))
+	facePart("LeftEye", Vector2.new(365, 330), Vector2.new(22, 48), Color3.fromRGB(34, 27, 23))
+	facePart("RightEye", Vector2.new(635, 330), Vector2.new(22, 48), Color3.fromRGB(34, 27, 23))
+	facePart("LeftCheek", Vector2.new(365, 455), Vector2.new(88, 88), Color3.fromRGB(244, 224, 174)).BackgroundTransparency = 0.45
+	facePart("RightCheek", Vector2.new(635, 455), Vector2.new(88, 88), Color3.fromRGB(244, 224, 174)).BackgroundTransparency = 0.45
+	local nose = facePart("Nose", Vector2.new(500, 485), Vector2.new(150, 80), Color3.fromRGB(142, 105, 45))
 	stroke(nose, 3)
 
 	local leftEar = create("Frame", {
 		BackgroundColor3 = colors.face,
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromOffset(375, 165),
-		Size = UDim2.fromOffset(190, 130),
+		Position = UDim2.fromOffset(320, 170),
+		Size = UDim2.fromOffset(185, 132),
 		Rotation = -10,
+		ZIndex = 5,
 		Parent = board,
 	})
 	corner(leftEar, UDim.new(0.5, 0))
@@ -173,9 +184,10 @@ do
 	local rightEar = create("Frame", {
 		BackgroundColor3 = colors.face,
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromOffset(725, 165),
-		Size = UDim2.fromOffset(190, 130),
+		Position = UDim2.fromOffset(680, 170),
+		Size = UDim2.fromOffset(185, 132),
 		Rotation = 10,
+		ZIndex = 5,
 		Parent = board,
 	})
 	corner(rightEar, UDim.new(0.5, 0))
@@ -190,6 +202,7 @@ do
 		Rotation = -10,
 		Position = UDim2.fromScale(0.08, 0.1),
 		Size = UDim2.fromScale(0.84, 0.82),
+		ZIndex = 6,
 		Parent = rightEar,
 	})
 
@@ -200,8 +213,9 @@ do
 		TextColor3 = colors.ink,
 		TextSize = 24,
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromOffset(550, 150),
+		Position = UDim2.fromOffset(500, 150),
 		Size = UDim2.fromOffset(140, 140),
+		ZIndex = 6,
 		Parent = board,
 	})
 	corner(spinner, UDim.new(1, 0))
@@ -216,6 +230,7 @@ do
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromOffset(54, 42),
+		ZIndex = 7,
 		Parent = spinner,
 	})
 	corner(spinnerPlayer, UDim.new(1, 0))
@@ -342,6 +357,32 @@ do
 		return prefix .. tostring(playerState.id)
 	end
 
+	local function roundPoint(value)
+		return math.floor(value * 100 + 0.5) / 100
+	end
+
+	local function trackPoint(curve, degrees)
+		local radians = math.rad(degrees)
+		return Vector2.new(
+			roundPoint(curve.cx + curve.rx * math.cos(radians)),
+			roundPoint(curve.cy + curve.ry * math.sin(radians))
+		)
+	end
+
+	local function faceCurvePoint(degrees)
+		return trackPoint(track.face, degrees)
+	end
+
+	local function growFromFace(degrees, amount)
+		local point = faceCurvePoint(degrees)
+		local delta = point - track.center
+		local distance = math.max(delta.Magnitude, 1)
+		return Vector2.new(
+			roundPoint(point.X + delta.X / distance * amount),
+			roundPoint(point.Y + delta.Y / distance * amount)
+		)
+	end
+
 	local function buildSpaces(boardSpaces)
 		for _, button in pairs(spaceButtons) do
 			button:Destroy()
@@ -350,9 +391,10 @@ do
 
 		for index, space in ipairs(boardSpaces) do
 			local count = #boardSpaces
-			local angle = math.rad(220 + ((index - 1) / (count - 1)) * 280)
-			local x = boardCenter.X + math.cos(angle) * 410
-			local y = boardCenter.Y + 40 + math.sin(angle) * 260
+			local startDegrees = track.start + track.span * ((index - 1) / count)
+			local endDegrees = track.start + track.span * (index / count)
+			local midDegrees = (startDegrees + endDegrees) / 2
+			local label = growFromFace(midDegrees, track.labelOffset)
 			local button = create("TextButton", {
 				Name = "Space" .. index,
 				AnchorPoint = Vector2.new(0.5, 0.5),
@@ -360,11 +402,12 @@ do
 				Font = Enum.Font.FredokaOne,
 				Text = space.label,
 				TextColor3 = colors.ink,
-				TextSize = space.label == "" and 10 or 14,
+				TextSize = space.label == "" and 10 or 13,
 				TextWrapped = true,
-				Rotation = math.deg(angle) + 90,
-				Position = UDim2.fromOffset(x, y),
-				Size = UDim2.fromOffset(92, 54),
+				Rotation = 0,
+				Position = UDim2.fromOffset(label.X, label.Y),
+				Size = UDim2.fromOffset(86, 60),
+				ZIndex = 2,
 				Parent = board,
 			})
 			stroke(button, 3)
@@ -403,6 +446,7 @@ do
 						AnchorPoint = Vector2.new(0.5, 0.5),
 						Position = UDim2.fromScale(0.25 + (index - 1) * 0.2, 0.75),
 						Size = UDim2.fromOffset(28, 24),
+						ZIndex = 8,
 						Parent = parent,
 					})
 					corner(token, UDim.new(1, 0))
