@@ -540,13 +540,13 @@ function updateTeams() {
 }
 
 function updateBoardScores() {
-  if (state.phase !== "race") {
-    boardScoresEl.hidden = true;
-    boardScoresEl.innerHTML = "";
+  boardScoresEl.hidden = false;
+
+  if (state.phase === "setup") {
+    updateSetupBoardScores();
     return;
   }
 
-  boardScoresEl.hidden = false;
   const capyPlayers = state.players.filter((player) => player.team === "capys");
   const pelicanPlayers = state.players.filter((player) => player.team === "pelicans");
   const entries = state.players.length === 2
@@ -565,6 +565,51 @@ function updateBoardScores() {
     .filter((entry) => entry.player)
     .map(boardScoreCardHtml)
     .join("");
+}
+
+function updateSetupBoardScores() {
+  const entries = state.players.length === 2
+    ? [
+        { player: state.players[0], corner: "top-left" },
+        { player: state.players[1], corner: "top-right" }
+      ]
+    : [
+        { player: state.players[0], corner: "top-left" },
+        { player: state.players[1], corner: "bottom-left" },
+        { player: state.players[2], corner: "top-right" },
+        { player: state.players[3], corner: "bottom-right" }
+      ];
+
+  boardScoresEl.innerHTML = entries
+    .map(setupBoardScoreCardHtml)
+    .join("");
+}
+
+function setupBoardScoreCardHtml({ player, corner }) {
+  const roll = state.setupRolls[player.id];
+  const current = player.id === state.setupTurn;
+  const status = setupPlayerStatus(player, roll, current);
+  const side = state.players.length === 4
+    ? player.id < 2 ? "Team pair 1" : "Team pair 2"
+    : "Team picker";
+
+  return `
+    <div class="board-score-card setup-pick ${corner} ${current ? "current" : ""}">
+      <div class="board-score-topline">
+        <span>${player.name}</span>
+        <strong>${roll ?? "-"}</strong>
+      </div>
+      <div class="board-score-player">${side}</div>
+      <div class="board-setup-status">${status}</div>
+    </div>
+  `;
+}
+
+function setupPlayerStatus(player, roll, current) {
+  if (roll !== null) return `Spun ${roll}`;
+  if (current && state.busy) return "Spinning...";
+  if (current) return "Spin now";
+  return "Waiting";
 }
 
 function boardScoreCardHtml({ team, player, corner }) {

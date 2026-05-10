@@ -214,6 +214,15 @@ select {
   background: rgba(217, 231, 241, 0.94);
 }
 
+.board-score-card.setup-pick {
+  background: rgba(255, 253, 248, 0.92);
+}
+
+.board-score-card.setup-pick.current {
+  background: rgba(248, 220, 154, 0.96);
+  box-shadow: 4px 5px 0 rgba(42, 37, 33, 0.24);
+}
+
 .board-score-topline {
   display: flex;
   align-items: baseline;
@@ -227,11 +236,18 @@ select {
 }
 
 .board-score-player,
-.board-power-text {
+.board-power-text,
+.board-setup-status {
   margin-top: 4px;
   color: var(--muted);
   font-size: 0.74rem;
   line-height: 1.12;
+}
+
+.board-setup-status {
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 900;
 }
 
 .board-power-meter {
