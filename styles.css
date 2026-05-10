@@ -847,6 +847,19 @@ select {
   margin: 4px auto 14px;
 }
 
+.spinner[role="button"] {
+  cursor: pointer;
+}
+
+.spinner[role="button"]:focus-visible {
+  outline: 4px solid var(--sun);
+  outline-offset: 5px;
+}
+
+.spinner.is-disabled {
+  cursor: default;
+}
+
 .board-spinner {
   position: absolute;
   left: 50%;

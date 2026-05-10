@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Run, Capys, Run</title>
-    <link rel="stylesheet" href="styles.css?v=20260510-auto-mystery">
+    <link rel="stylesheet" href="styles.css?v=20260510-clickable-spinner">
   </head>
   <body>
     <main class="app-shell">
@@ -32,7 +32,7 @@
                   <p>Characters</p>
                   <div id="ear-characters" class="ear-characters"></div>
                 </div>
-                <div id="spinner" class="spinner board-spinner" aria-label="Orange spinner">
+                <div id="spinner" class="spinner board-spinner" role="button" tabindex="0" aria-label="Spin">
                   <div class="spinner-pointer"></div>
                   <div class="spinner-leaf leaf-left"></div>
                   <div class="spinner-leaf leaf-right"></div>
@@ -131,6 +131,6 @@
       </section>
     </main>
 
-    <script src="game.js?v=20260510-auto-mystery"></script>
+    <script src="game.js?v=20260510-clickable-spinner"></script>
   </body>
 </html>

@@ -1,6 +1,7 @@
 const boardEl = document.querySelector("#board");
 const spacesEl = document.querySelector("#spaces");
 const boardScoresEl = document.querySelector("#board-scores");
+const spinnerEl = document.querySelector("#spinner");
 const spinButton = document.querySelector("#spin-button");
 const reverseButton = document.querySelector("#reverse-button");
 const newGameButton = document.querySelector("#new-game");
@@ -364,6 +365,9 @@ function updateUi() {
   turnHelpEl.textContent = setup ? setupHelpText() : "Move counter-clockwise around the capybara. Use powers before you spin.";
   spinButton.textContent = setup ? "Spin for teams" : "Spin";
   spinButton.disabled = state.busy || state.over;
+  spinnerEl.classList.toggle("is-disabled", state.busy || state.over);
+  spinnerEl.setAttribute("aria-disabled", String(state.busy || state.over));
+  spinnerEl.setAttribute("aria-label", setup ? "Spin for teams" : "Spin");
   const reversePlayer = savedReverseResponder();
   reverseButton.textContent = reversePlayer ? `Use ${reversePlayer.name}'s reverse` : "Use saved reverse";
   reverseButton.disabled = setup || state.over || !reversePlayer;
@@ -709,6 +713,7 @@ function spin() {
 function setupSpin() {
   if (state.busy || state.over) return;
   state.busy = true;
+  updateUi();
   const player = currentPlayer();
   const result = spinWheel();
   addLog(`${player.name} spun ${result} for teams.`);
@@ -775,6 +780,7 @@ function raceSpin() {
   }
 
   state.busy = true;
+  updateUi();
   const result = spinWheel();
   addLog(`${player.name} spun ${result}.`);
 
@@ -1146,7 +1152,15 @@ function toggleRules() {
   rulesButton.setAttribute("aria-expanded", String(next));
 }
 
+function onSpinnerKeydown(event) {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  event.preventDefault();
+  spin();
+}
+
 spinButton.addEventListener("click", spin);
+spinnerEl.addEventListener("click", spin);
+spinnerEl.addEventListener("keydown", onSpinnerKeydown);
 reverseButton.addEventListener("click", useSavedReverse);
 playCardButton.addEventListener("click", playPendingCard);
 mysteryCardPopupEl.addEventListener("click", playPendingCard);
