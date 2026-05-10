@@ -381,9 +381,9 @@ function updateUi() {
   turnTeamEl.textContent = setup ? setupRollLabel() : `${teamLabel(current.team)} team`;
   turnTeamEl.className = `team-pill ${setup ? "unassigned" : current.team}`;
   turnHelpEl.textContent = setup ? setupHelpText() : "Move counter-clockwise around the capybara. Use powers before you spin.";
+  const canSpin = !state.busy && !state.over && (!hasPendingAction() || hasPendingSpinAgain());
   spinButton.textContent = setup ? "Spin for teams" : "Spin";
-  spinButton.disabled = state.busy || state.over;
-  const canSpin = !state.busy && !state.over && !hasPendingAction();
+  spinButton.disabled = !canSpin;
   spinnerEl.classList.toggle("is-disabled", !canSpin);
   spinnerEl.classList.toggle("is-spin-ready", canSpin);
   spinnerEl.setAttribute("aria-disabled", String(!canSpin));
@@ -639,7 +639,9 @@ function updatePendingActions() {
   if (state.pendingMove) {
     pendingMoveEl.hidden = false;
     pendingMoveTitleEl.textContent = state.pendingMove.label;
-    pendingMoveHelpEl.textContent = `Press the raised board space to ${actionButtonLabel(state.pendingMove)}.`;
+    pendingMoveHelpEl.textContent = hasPendingSpinAgain()
+      ? "Press the raised board space or spin now."
+      : `Press the raised board space to ${actionButtonLabel(state.pendingMove)}.`;
   } else {
     pendingMoveEl.hidden = true;
   }
@@ -737,6 +739,10 @@ function sleep(ms) {
 function spin() {
   if (state.phase === "setup") {
     setupSpin();
+    return;
+  }
+  if (hasPendingSpinAgain()) {
+    playPendingMove();
     return;
   }
   raceSpin();
@@ -976,6 +982,10 @@ function hasPendingAction() {
   return Boolean(state.pendingCard || state.pendingMove);
 }
 
+function hasPendingSpinAgain() {
+  return state.pendingMove?.kind === "spinAgain";
+}
+
 function savedReverseResponder() {
   if (state.phase !== "race" || state.over || !state.pendingCard) return null;
   const cardPlayer = state.players[state.pendingCard.playerId];
@@ -1021,7 +1031,7 @@ async function playPendingMove() {
     return;
   }
   if (pending.kind === "spinAgain") {
-    grantExtraSpin(player);
+    raceSpin();
     return;
   }
   if (pending.kind === "skipNext") {
