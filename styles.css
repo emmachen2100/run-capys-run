@@ -923,12 +923,12 @@ select {
 
 .spinner-player-token {
   position: absolute;
-  left: calc(100% + 8px);
-  top: 50%;
-  z-index: 6;
-  width: 48px;
-  height: 46px;
-  transform: translateY(-50%);
+  left: 50%;
+  top: -34px;
+  z-index: 3;
+  width: 46px;
+  height: 44px;
+  transform: translateX(-50%);
   pointer-events: none;
 }
 
