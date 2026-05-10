@@ -420,18 +420,18 @@ function svgPlayerToken(player, tokenIndex, tokenCount) {
 function tokenOffset(tokenIndex, tokenCount) {
   const offsets = {
     1: [{ x: 0, y: 0 }],
-    2: [{ x: -5, y: 0 }, { x: 5, y: 0 }],
-    3: [{ x: 0, y: -5 }, { x: -5, y: 5 }, { x: 5, y: 5 }],
-    4: [{ x: -5, y: -5 }, { x: 5, y: -5 }, { x: -5, y: 5 }, { x: 5, y: 5 }]
+    2: [{ x: -6, y: 0 }, { x: 6, y: 0 }],
+    3: [{ x: 0, y: -6 }, { x: -6, y: 6 }, { x: 6, y: 6 }],
+    4: [{ x: -6, y: -6 }, { x: 6, y: -6 }, { x: -6, y: 6 }, { x: 6, y: 6 }]
   };
   return offsets[tokenCount]?.[tokenIndex] || { x: 0, y: 0 };
 }
 
 function svgCharacterSize(character) {
   if (character === "capy-character") {
-    return { href: "assets/capy-character.png", width: 18, height: 22, badgeX: 7, badgeY: 7, padRadius: 11 };
+    return { href: "assets/capy-character.png", width: 23, height: 27, badgeX: 9, badgeY: 9, padRadius: 13 };
   }
-  return { href: "assets/pelican-character.png", width: 25, height: 16, badgeX: 8, badgeY: 5, padRadius: 11 };
+  return { href: "assets/pelican-character.png", width: 31, height: 20, badgeX: 10, badgeY: 7, padRadius: 13 };
 }
 
 function updateTeams() {
