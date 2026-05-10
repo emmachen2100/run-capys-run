@@ -64,7 +64,7 @@ const cardBlueprints = [
   ...repeatCard(7, { title: "+ points", text: "Add 5 points to your team.", apply: (game, player) => addPoints(game, player.team, 5) }),
   ...repeatCard(4, { title: "- points", text: "Lose 4 points from your team.", apply: (game, player) => addPoints(game, player.team, -4) }),
   { title: "Skip turn", text: "The next player skips a turn.", apply: (game) => { const next = nextLivingPlayer(game); next.skip = true; addLog(`${next.name} will skip a turn.`); } },
-  ...repeatCard(3, { title: "Oops card", text: "Slide back to the last mystery card.", apply: async (game, player) => moveToPreviousMystery(game, player) }),
+  ...repeatCard(3, { title: "Oops card", text: "Nothing happens.", apply: (game, player) => addLog(`${player.name} got an Oops card. Nothing happens.`) }),
   ...repeatCard(2, { title: "Switch points", text: "Switch team scores.", apply: switchPoints }),
   { title: "Double points", text: "Double your team's points.", apply: (game, player) => { game.teams[player.team].score *= 2; addLog(`${teamLabel(player.team)} doubled its points.`); } },
   { title: "Pick 2 more cards", text: "Draw two more mystery cards.", apply: (game) => { game.queuedMysteryDraws += 2; addLog("Two more mystery cards are waiting."); } },
@@ -877,18 +877,6 @@ function switchPlacesWithLeader(game, player) {
   [player.position, other.position] = [other.position, player.position];
   addLog(`${player.name} switched places with ${other.name}.`);
   updateUi();
-}
-
-async function moveToPreviousMystery(game, player) {
-  for (let index = player.position - 1; index >= 0; index -= 1) {
-    if (boardSpaces[index].type === "mystery") {
-      await movePlayerTo(game, player, index, "card");
-      addLog(`${player.name} slid back to a mystery card.`);
-      return;
-    }
-  }
-  await movePlayerTo(game, player, 0, "card");
-  addLog(`${player.name} slid back to start.`);
 }
 
 function useSavedReverse() {
