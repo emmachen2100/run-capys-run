@@ -148,8 +148,6 @@ function renderBoard() {
     const outerEnd = growFromFace(track, end, track.thickness);
     const label = growFromFace(track, mid, track.labelOffset);
     const token = spaceTokenPoint(innerStart, innerEnd, outerStart, outerEnd);
-    const tokenHostHeight = 76;
-    const tokenHostYOffset = tokenHostHeight / 2;
     const type = space.type === "save-reverse" ? "reverse save-reverse" : space.type;
 
     const group = createSvgElement("g");
@@ -176,19 +174,15 @@ function renderBoard() {
     text.setAttribute("y", label.y);
     appendSpaceLabel(text, space.label);
 
-    const tokenHost = createSvgElement("foreignObject");
-    tokenHost.classList.add("tokens-host");
-    tokenHost.setAttribute("x", token.x - 43);
-    tokenHost.setAttribute("y", token.y - tokenHostYOffset);
-    tokenHost.setAttribute("width", 86);
-    tokenHost.setAttribute("height", tokenHostHeight);
-    const tokens = document.createElement("div");
-    tokens.className = "tokens";
+    const tokens = createSvgElement("g");
+    tokens.classList.add("svg-tokens");
     tokens.setAttribute("aria-hidden", "true");
-    tokens.title = spaceTooltip(space, index);
-    tokenHost.appendChild(tokens);
+    tokens.setAttribute("transform", `translate(${token.x} ${token.y})`);
+    const tokensTitle = createSvgElement("title");
+    tokensTitle.textContent = spaceTooltip(space, index);
+    tokens.appendChild(tokensTitle);
 
-    group.append(title, path, text, tokenHost);
+    group.append(title, path, text, tokens);
     svg.appendChild(group);
   });
 
@@ -379,12 +373,61 @@ function updateSpaces(current) {
     const index = Number(spaceEl.dataset.index);
     const occupyingPlayers = state.players
       .filter((player) => player.position === index && !player.finished && state.phase === "race");
-    const tokens = occupyingPlayers
-      .map((player) => playerTokenHtml(player, "token"))
-      .join("");
-    spaceEl.querySelector(".tokens").innerHTML = tokens;
+    const tokenLayer = spaceEl.querySelector(".svg-tokens");
+    const title = tokenLayer.querySelector("title");
+    tokenLayer.replaceChildren(title, ...occupyingPlayers.map((player, playerIndex) => {
+      return svgPlayerToken(player, playerIndex, occupyingPlayers.length);
+    }));
     spaceEl.classList.toggle("active", state.phase === "race" && index === current.position && !current.finished);
   });
+}
+
+function svgPlayerToken(player, tokenIndex, tokenCount) {
+  const character = playerCharacter(player);
+  const offset = tokenOffset(tokenIndex, tokenCount);
+  const group = createSvgElement("g");
+  group.classList.add("svg-character-token", player.team, character);
+  group.setAttribute("transform", `translate(${offset.x} ${offset.y})`);
+
+  const image = createSvgElement("image");
+  image.classList.add("svg-character-art");
+  const size = svgCharacterSize(character);
+  image.setAttribute("href", size.href);
+  image.setAttribute("x", -size.width / 2);
+  image.setAttribute("y", -size.height / 2);
+  image.setAttribute("width", size.width);
+  image.setAttribute("height", size.height);
+  image.setAttribute("preserveAspectRatio", "xMidYMid meet");
+
+  const badge = createSvgElement("g");
+  badge.classList.add("svg-character-badge");
+  badge.setAttribute("transform", `translate(${size.badgeX} ${size.badgeY})`);
+  const circle = createSvgElement("circle");
+  circle.setAttribute("r", 5.5);
+  const label = createSvgElement("text");
+  label.textContent = player.id + 1;
+  label.setAttribute("dy", "0.33em");
+  badge.append(circle, label);
+
+  group.append(image, badge);
+  return group;
+}
+
+function tokenOffset(tokenIndex, tokenCount) {
+  const offsets = {
+    1: [{ x: 0, y: 0 }],
+    2: [{ x: -7, y: 0 }, { x: 7, y: 0 }],
+    3: [{ x: 0, y: -7 }, { x: -7, y: 6 }, { x: 7, y: 6 }],
+    4: [{ x: -7, y: -6 }, { x: 7, y: -6 }, { x: -7, y: 6 }, { x: 7, y: 6 }]
+  };
+  return offsets[tokenCount]?.[tokenIndex] || { x: 0, y: 0 };
+}
+
+function svgCharacterSize(character) {
+  if (character === "capy-character") {
+    return { href: "assets/capy-character.png", width: 25, height: 30, badgeX: 11, badgeY: 11 };
+  }
+  return { href: "assets/pelican-character.png", width: 35, height: 23, badgeX: 13, badgeY: 8 };
 }
 
 function updateTeams() {

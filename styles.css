@@ -234,6 +234,27 @@ select {
   overflow: visible;
 }
 
+.svg-character-token {
+  pointer-events: none;
+}
+
+.svg-character-art {
+  filter: drop-shadow(1px 2px 0 rgba(42, 37, 33, 0.28));
+}
+
+.svg-character-badge circle {
+  fill: #fffaf1;
+  stroke: var(--line);
+  stroke-width: 1.4;
+}
+
+.svg-character-badge text {
+  fill: var(--ink);
+  font-size: 7px;
+  font-weight: 900;
+  text-anchor: middle;
+}
+
 .tokens {
   position: relative;
   width: 86px;
