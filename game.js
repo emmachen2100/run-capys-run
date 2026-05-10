@@ -774,6 +774,7 @@ async function playPendingCard() {
   const player = state.players[pending.playerId];
   state.pendingCard = null;
   state.usedCards.push(pending.card);
+  if (state.lastCard === pending.card) state.lastCard = null;
   addLog(`${player.name} played ${pending.card.title}.`);
   updateUi();
   await pending.card.apply(state, player);
