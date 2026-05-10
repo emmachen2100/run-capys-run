@@ -434,7 +434,9 @@ function playerCharacter(player) {
 }
 
 function updateMysteryEar() {
-  const label = state.lastCard ? state.lastCard.title : "?";
+  const hasCard = Boolean(state.lastCard);
+  const label = hasCard ? state.lastCard.title : "?";
+  mysteryEarEl.classList.toggle("has-card", hasCard);
   mysteryEarEl.innerHTML = `<span>${label}</span><small>${state.deck.length} left</small>`;
 }
 

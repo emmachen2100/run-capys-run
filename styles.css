@@ -499,6 +499,7 @@ select {
   width: 44px;
   height: 56px;
   display: grid;
+  grid-template-rows: 1fr auto;
   place-items: center;
   border: 2px solid var(--line);
   background: #fffaf1;
@@ -507,6 +508,17 @@ select {
   font-weight: 900;
   line-height: 1;
   text-align: center;
+}
+
+.mystery-ear span {
+  max-width: 36px;
+}
+
+.mystery-ear.has-card span {
+  align-self: end;
+  font-size: 0.62rem;
+  line-height: 0.92;
+  overflow-wrap: anywhere;
 }
 
 .mystery-ear small {
