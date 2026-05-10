@@ -621,9 +621,10 @@ function boardScoreCardHtml({ team, player, corner }) {
   const progress = powerProgressPercent(team);
   const powerText = powers > 0 ? `${powers} power ready` : `${pointsUntilPower(team)} to power`;
   const place = player.finished ? "Finished" : `Space ${player.position + 1}`;
+  const actionClass = boardScoreActionClass(player);
 
   return `
-    <div class="board-score-card ${corner} ${team}">
+    <div class="board-score-card ${corner} ${team} ${actionClass}">
       <div class="board-score-topline">
         <span class="board-score-identity">
           ${playerTokenHtml(player, "board-score-token")}
@@ -638,6 +639,11 @@ function boardScoreCardHtml({ team, player, corner }) {
       <div class="board-power-text">${powerText}</div>
     </div>
   `;
+}
+
+function boardScoreActionClass(player) {
+  if (state.phase !== "race" || state.over || state.pendingCard) return "";
+  return state.pendingMove?.playerId === player.id ? "needs-action" : "";
 }
 
 function powerProgressPercent(team) {

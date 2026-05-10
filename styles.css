@@ -225,6 +225,23 @@ select {
   box-shadow: 4px 5px 0 rgba(42, 37, 33, 0.24);
 }
 
+.board-score-card.needs-action {
+  border-color: #c47b16;
+  box-shadow: 5px 7px 0 rgba(196, 123, 22, 0.25);
+  animation: board-card-action-bounce 1.05s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes board-card-action-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  45% {
+    transform: translateY(-8px);
+  }
+}
+
 .board-score-topline {
   display: flex;
   align-items: center;
