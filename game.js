@@ -627,7 +627,7 @@ function raceSpin() {
 }
 
 function spinWheel() {
-  const result = 1 + Math.floor(Math.random() * 6);
+  const result = randomSpinResult();
   const segmentCenter = (result - 1) * 60 + 30;
   const targetRotation = (360 - segmentCenter) % 360;
   const currentRotation = ((state.spinRotation % 360) + 360) % 360;
@@ -637,6 +637,19 @@ function spinWheel() {
   state.spinRotation += 720 + extraTurn;
   wheelEl.style.setProperty("--spin", `${state.spinRotation}deg`);
   return result;
+}
+
+function randomSpinResult() {
+  if (window.crypto?.getRandomValues) {
+    const values = new Uint32Array(1);
+    const fairLimit = Math.floor(0x100000000 / 6) * 6;
+    do {
+      window.crypto.getRandomValues(values);
+    } while (values[0] >= fairLimit);
+    return values[0] % 6 + 1;
+  }
+
+  return 1 + Math.floor(Math.random() * 6);
 }
 
 async function movePlayer(game, player, amount, source) {
