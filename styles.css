@@ -758,6 +758,23 @@ select {
   font-size: 0.9rem;
 }
 
+.action-card {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 2px dashed rgba(42, 37, 33, 0.28);
+}
+
+.action-card h3 {
+  margin: 0 0 6px;
+  font-size: 1.15rem;
+}
+
+.action-card p:not(.eyebrow) {
+  margin-bottom: 8px;
+  color: var(--muted);
+  line-height: 1.25;
+}
+
 .team-row,
 .player-row {
   display: grid;

@@ -18,6 +18,13 @@ const mysteryEarEl = document.querySelector("#mystery-ear");
 const powerStatusEl = document.querySelector("#power-status");
 const powerUpButton = document.querySelector("#power-up");
 const powerDownButton = document.querySelector("#power-down");
+const pendingCardEl = document.querySelector("#pending-card");
+const pendingCardTitleEl = document.querySelector("#pending-card-title");
+const pendingCardTextEl = document.querySelector("#pending-card-text");
+const playCardButton = document.querySelector("#play-card");
+const pendingMoveEl = document.querySelector("#pending-move");
+const pendingMoveTitleEl = document.querySelector("#pending-move-title");
+const playMoveButton = document.querySelector("#play-move");
 
 const MOVE_STEP_MS = 240;
 
@@ -51,7 +58,7 @@ const boardSpaces = [
 
 const cardBlueprints = [
   ...repeatCard(3, { title: "Move forward", text: "Move forward 3 spaces.", apply: async (game, player) => movePlayer(game, player, 3, "card") }),
-  ...repeatCard(3, { title: "Move backward", text: "Move backward 3 spaces.", apply: async (game, player) => movePlayer(game, player, -3, "card") }),
+  ...repeatCard(3, { title: "Move backward", text: "Move back 1 space.", apply: async (game, player) => movePlayer(game, player, -1, "card") }),
   ...repeatCard(3, { title: "Reverse", text: "Save this reverse card for later.", apply: (game, player) => { player.savedReverse = true; addLog(`${player.name} saved a reverse card.`); } }),
   ...repeatCard(3, { title: "Back to start", text: "Go back to start.", apply: async (game, player) => movePlayerTo(game, player, 0, "card") }),
   ...repeatCard(7, { title: "+ points", text: "Add 5 points to your team.", apply: (game, player) => addPoints(game, player.team, 5) }),
@@ -60,7 +67,7 @@ const cardBlueprints = [
   ...repeatCard(3, { title: "Oops card", text: "Slide back to the last mystery card.", apply: async (game, player) => moveToPreviousMystery(game, player) }),
   ...repeatCard(2, { title: "Switch points", text: "Switch team scores.", apply: switchPoints }),
   { title: "Double points", text: "Double your team's points.", apply: (game, player) => { game.teams[player.team].score *= 2; addLog(`${teamLabel(player.team)} doubled its points.`); } },
-  { title: "Pick 2 more cards", text: "Draw two more mystery cards.", apply: async (game, player) => { await drawMystery(game, player, true); await drawMystery(game, player, true); } },
+  { title: "Pick 2 more cards", text: "Draw two more mystery cards.", apply: (game) => { game.queuedMysteryDraws += 2; addLog("Two more mystery cards are waiting."); } },
   { title: "Switch places", text: "Switch places with another player.", apply: switchPlacesWithLeader }
 ];
 
@@ -98,7 +105,10 @@ function createGame() {
     turn: 0,
     direction: 1,
     deck: shuffle(cardBlueprints),
-    discard: [],
+    usedCards: [],
+    pendingCard: null,
+    pendingMove: null,
+    queuedMysteryDraws: 0,
     lastCard: null,
     busy: false,
     over: false,
@@ -354,6 +364,7 @@ function updateUi() {
   updateEarCharacters();
   updateMysteryEar();
   updatePowerButtons();
+  updatePendingActions();
 }
 
 function updateSpaces(current) {
@@ -424,6 +435,29 @@ function playerCharacter(player) {
 function updateMysteryEar() {
   const label = state.lastCard ? state.lastCard.title : "?";
   mysteryEarEl.innerHTML = `<span>${label}</span><small>${state.deck.length} left</small>`;
+}
+
+function updatePendingActions() {
+  if (state.pendingCard) {
+    pendingCardEl.hidden = false;
+    pendingCardTitleEl.textContent = state.pendingCard.card.title;
+    pendingCardTextEl.textContent = state.pendingCard.card.text;
+  } else {
+    pendingCardEl.hidden = true;
+  }
+
+  if (state.pendingMove) {
+    pendingMoveEl.hidden = false;
+    pendingMoveTitleEl.textContent = state.pendingMove.label;
+    playMoveButton.textContent = moveButtonLabel(state.pendingMove.amount);
+  } else {
+    pendingMoveEl.hidden = true;
+  }
+}
+
+function moveButtonLabel(amount) {
+  if (amount < 0) return `Move back ${Math.abs(amount)}`;
+  return `Move ${amount}`;
 }
 
 function updatePowerButtons() {
@@ -533,24 +567,29 @@ function setupSpin() {
 
 function finishTeamPicker() {
   if (state.players.length === 2) {
-    const [first, second] = state.setupRolls;
-    if (first === second) {
+    const bestRoll = Math.max(...state.setupRolls);
+    const winners = state.setupRolls
+      .map((roll, index) => roll === bestRoll ? index : null)
+      .filter((index) => index !== null);
+    if (winners.length !== 1) {
       state.setupTurn = 0;
       state.setupRolls = Array(state.players.length).fill(null);
       addLog("Tie spin. Spin again to decide teams.");
       return;
     }
-    assignTeams(first > second ? [0] : [1]);
+    assignTeams(winners);
   } else {
-    const firstPair = state.setupRolls[0] + state.setupRolls[1];
-    const secondPair = state.setupRolls[2] + state.setupRolls[3];
-    if (firstPair === secondPair) {
+    const teamTotals = [
+      { total: state.setupRolls[0] + state.setupRolls[1], ids: [0, 1] },
+      { total: state.setupRolls[2] + state.setupRolls[3], ids: [2, 3] }
+    ];
+    if (teamTotals[0].total === teamTotals[1].total) {
       state.setupTurn = 0;
       state.setupRolls = Array(state.players.length).fill(null);
       addLog("Tie total. Everyone spins again.");
       return;
     }
-    assignTeams(firstPair > secondPair ? [0, 1] : [2, 3]);
+    assignTeams(teamTotals[0].total > teamTotals[1].total ? teamTotals[0].ids : teamTotals[1].ids);
   }
 
   state.phase = "race";
@@ -583,7 +622,7 @@ function raceSpin() {
   setTimeout(async () => {
     await movePlayer(state, player, result, "spin");
     const keepsTurn = await resolveSpace(state, player);
-    if (!state.over && !keepsTurn) endTurn();
+    if (!state.over && !keepsTurn && !hasPendingAction()) endTurn();
   }, 760);
 }
 
@@ -664,10 +703,16 @@ async function resolveSpace(game, player) {
   }
   if (space.switchPlaces) switchPlacesWithLeader(game, player);
   if (space.move) {
-    addLog(`${space.label}.`);
-    await movePlayer(game, player, space.move, "space");
+    game.pendingMove = {
+      playerId: player.id,
+      amount: space.move,
+      label: space.label
+    };
+    addLog(`${player.name} landed on ${space.label}.`);
+    updateUi();
+    return true;
   }
-  if (isMysterySpace(space)) await drawMystery(game, player);
+  if (isMysterySpace(space)) return await drawMystery(game, player);
   if (space.spinAgain && !game.over) {
     addLog(`${player.name} gets an extra spin.`);
     game.busy = false;
@@ -683,21 +728,66 @@ function isMysterySpace(space) {
 
 async function drawMystery(game, player, chained = false) {
   if (game.deck.length === 0) {
-    game.deck = shuffle(game.discard);
-    game.discard = [];
-    addLog("Mystery deck reshuffled.");
+    addLog("No mystery cards are left.");
+    return false;
   }
 
-  const startingPosition = player.position;
   const card = game.deck.pop();
   game.lastCard = card;
-  game.discard.push(card);
+  game.pendingCard = {
+    playerId: player.id,
+    card,
+    startingPosition: player.position,
+    chained
+  };
   addLog(`${player.name} drew ${card.title}: ${card.text}`);
-  await card.apply(game, player);
+  updateUi();
+  return true;
+}
 
-  if (!chained && !game.over) {
-    if (player.position !== startingPosition && !player.finished) await resolveSpace(game, player);
+function hasPendingAction() {
+  return Boolean(state.pendingCard || state.pendingMove);
+}
+
+async function playPendingCard() {
+  const pending = state.pendingCard;
+  if (!pending || state.over) return;
+  const player = state.players[pending.playerId];
+  state.pendingCard = null;
+  state.usedCards.push(pending.card);
+  addLog(`${player.name} played ${pending.card.title}.`);
+  updateUi();
+  await pending.card.apply(state, player);
+  await finishPendingAction(player, pending.startingPosition);
+}
+
+async function playPendingMove() {
+  const pending = state.pendingMove;
+  if (!pending || state.over) return;
+  const player = state.players[pending.playerId];
+  state.pendingMove = null;
+  const startingPosition = player.position;
+  addLog(`${pending.label}.`);
+  updateUi();
+  await movePlayer(state, player, pending.amount, "space");
+  await finishPendingAction(player, startingPosition);
+}
+
+async function finishPendingAction(player, startingPosition) {
+  if (state.over) return;
+
+  if (startingPosition !== null && player.position !== startingPosition && !player.finished) {
+    const keepsTurn = await resolveSpace(state, player);
+    if (keepsTurn || hasPendingAction() || state.over) return;
   }
+
+  if (state.queuedMysteryDraws > 0) {
+    state.queuedMysteryDraws -= 1;
+    const drewCard = await drawMystery(state, player, true);
+    if (drewCard || hasPendingAction()) return;
+  }
+
+  if (!state.over && !hasPendingAction()) endTurn();
 }
 
 function addPoints(game, team, amount) {
@@ -830,6 +920,8 @@ function toggleRules() {
 
 spinButton.addEventListener("click", spin);
 reverseButton.addEventListener("click", useSavedReverse);
+playCardButton.addEventListener("click", playPendingCard);
+playMoveButton.addEventListener("click", playPendingMove);
 powerUpButton.addEventListener("click", usePowerUp);
 powerDownButton.addEventListener("click", usePowerDown);
 newGameButton.addEventListener("click", createGame);
