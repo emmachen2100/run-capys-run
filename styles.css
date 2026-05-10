@@ -197,7 +197,7 @@ select {
 
 .board-scores {
   position: absolute;
-  inset: 12px;
+  inset: 10px 0;
   z-index: 6;
   pointer-events: none;
 }
@@ -1602,7 +1602,7 @@ select {
   }
 
   .board-scores {
-    inset: 8px;
+    inset: 8px 0;
   }
 
   .board-score-card {
