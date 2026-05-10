@@ -411,7 +411,7 @@ function svgPlayerToken(player, tokenIndex, tokenCount) {
   badge.classList.add("svg-character-badge");
   badge.setAttribute("transform", `translate(${size.badgeX} ${size.badgeY})`);
   const circle = createSvgElement("circle");
-  circle.setAttribute("r", 4);
+  circle.setAttribute("r", 5);
   const label = createSvgElement("text");
   label.textContent = player.id + 1;
   label.setAttribute("dy", "0.33em");
@@ -424,18 +424,18 @@ function svgPlayerToken(player, tokenIndex, tokenCount) {
 function tokenOffset(tokenIndex, tokenCount) {
   const offsets = {
     1: [{ x: 0, y: 0 }],
-    2: [{ x: -6, y: 0 }, { x: 6, y: 0 }],
-    3: [{ x: 0, y: -6 }, { x: -6, y: 6 }, { x: 6, y: 6 }],
-    4: [{ x: -6, y: -6 }, { x: 6, y: -6 }, { x: -6, y: 6 }, { x: 6, y: 6 }]
+    2: [{ x: -8, y: 0 }, { x: 8, y: 0 }],
+    3: [{ x: 0, y: -8 }, { x: -8, y: 7 }, { x: 8, y: 7 }],
+    4: [{ x: -8, y: -7 }, { x: 8, y: -7 }, { x: -8, y: 7 }, { x: 8, y: 7 }]
   };
   return offsets[tokenCount]?.[tokenIndex] || { x: 0, y: 0 };
 }
 
 function svgCharacterSize(character) {
   if (character === "capy-character") {
-    return { href: "assets/capy-character.png", width: 23, height: 27, badgeX: 9, badgeY: 9, padRadius: 13 };
+    return { href: "assets/capy-character.png", width: 34, height: 40, badgeX: 13, badgeY: 13, padRadius: 19 };
   }
-  return { href: "assets/pelican-character.png", width: 31, height: 20, badgeX: 10, badgeY: 7, padRadius: 13 };
+  return { href: "assets/pelican-character.png", width: 46, height: 28, badgeX: 15, badgeY: 10, padRadius: 19 };
 }
 
 function updateTeams() {
