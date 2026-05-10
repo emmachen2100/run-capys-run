@@ -183,7 +183,7 @@ function renderBoard() {
     tokens.setAttribute("aria-hidden", "true");
     tokenHost.appendChild(tokens);
 
-    group.append(path, text, tokenHost);
+    group.append(path, tokenHost, text);
     svg.appendChild(group);
   });
 
