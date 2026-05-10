@@ -1024,11 +1024,11 @@ select {
 .spinner-player-token {
   position: absolute;
   left: 50%;
-  top: -34px;
+  top: 50%;
   z-index: 3;
   width: 46px;
   height: 44px;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   pointer-events: none;
 }
 
