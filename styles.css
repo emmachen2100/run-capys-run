@@ -148,12 +148,14 @@ select {
 
 .board-wrap {
   min-width: 0;
+  display: flex;
+  justify-content: center;
 }
 
 .board {
   position: relative;
-  width: 100%;
-  min-height: min(78vh, 820px);
+  width: min(100%, calc((100svh - 170px) * 1.42));
+  min-height: 0;
   aspect-ratio: 1.42;
   overflow: hidden;
   background:
@@ -1283,6 +1285,32 @@ select {
 
   .event-log {
     grid-column: 1 / -1;
+  }
+}
+
+@media (max-height: 760px) and (min-width: 760px) {
+  .app-shell {
+    padding-top: 8px;
+  }
+
+  .game-panel {
+    padding: 12px 20px 18px;
+  }
+
+  .eyebrow {
+    margin-bottom: 0;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 4.2vw, 3.6rem);
+  }
+
+  .play-layout {
+    margin-top: 10px;
+  }
+
+  .board {
+    width: min(100%, calc((100svh - 126px) * 1.42));
   }
 }
 
