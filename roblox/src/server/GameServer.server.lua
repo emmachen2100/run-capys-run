@@ -146,10 +146,18 @@ local function buildCapyCenter(parent)
 	makePart(parent, "RightEye", Vector3.new(1.2, 1.2, 1.2), CFrame.new(4, 8, -18), Color3.fromRGB(34, 27, 23)).Shape = Enum.PartType.Ball
 end
 
+local function clearWorkspaceBoard()
+	local savedBoard = Workspace:FindFirstChild("RunCapysRunBoard")
+	if savedBoard then
+		savedBoard:Destroy()
+	end
+end
+
 local function buildBoard()
 	if boardModel then
 		boardModel:Destroy()
 	end
+	clearWorkspaceBoard()
 
 	spaceParts = {}
 	tokenParts = {}
