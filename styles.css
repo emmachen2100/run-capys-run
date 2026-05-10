@@ -288,9 +288,78 @@ select {
   font-size: 0.42rem;
 }
 
-.board-score-topline strong {
+.board-score-number {
   flex: 0 0 auto;
+  position: relative;
+  min-width: 2ch;
   font-size: 1.45rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.board-score-value {
+  display: inline-block;
+}
+
+.board-score-number.score-up .board-score-value,
+.board-score-number.score-down .board-score-value {
+  animation: score-number-pop 360ms ease-out;
+}
+
+.board-score-number.score-up {
+  color: #7a5320;
+}
+
+.board-score-number.score-down {
+  color: #335d79;
+}
+
+.board-score-delta {
+  position: absolute;
+  right: 0;
+  top: -1.25em;
+  padding: 2px 5px;
+  border: 2px solid var(--line);
+  background: #fffaf1;
+  box-shadow: 2px 2px 0 rgba(42, 37, 33, 0.15);
+  font-size: 0.72rem;
+  line-height: 1;
+  white-space: nowrap;
+  animation: score-delta-float 720ms ease-out both;
+}
+
+.board-score-number.score-up .board-score-delta {
+  background: #ffe399;
+}
+
+.board-score-number.score-down .board-score-delta {
+  background: #d9e7f1;
+}
+
+@keyframes score-number-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.22);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes score-delta-float {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) rotate(-4deg);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-4px) rotate(-4deg);
+  }
 }
 
 .board-score-player,
@@ -1516,7 +1585,7 @@ select {
     inset: 0 -3px 2px;
   }
 
-  .board-score-topline strong {
+  .board-score-number {
     font-size: 1.15rem;
   }
 

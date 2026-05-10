@@ -109,9 +109,12 @@ const cardBlueprints = [
     title: "Double points",
     text: "Double your team's points.",
     reverseText: "Cut that team's points in half instead.",
-    apply: (game, player) => { game.teams[player.team].score *= 2; addLog(`${teamLabel(player.team)} doubled its points.`); },
+    apply: (game, player) => {
+      setTeamScore(game, player.team, game.teams[player.team].score * 2);
+      addLog(`${teamLabel(player.team)} doubled its points.`);
+    },
     reverseApply: (game, player) => {
-      game.teams[player.team].score = Math.floor(game.teams[player.team].score / 2);
+      setTeamScore(game, player.team, Math.floor(game.teams[player.team].score / 2));
       addLog(`${teamLabel(player.team)} points were cut in half.`);
     }
   },
@@ -128,6 +131,8 @@ function repeatCard(count, card) {
 }
 
 function createGame() {
+  cancelScoreAnimations();
+
   const playerCount = Number(playerCountSelect.value);
   const players = Array.from({ length: playerCount }, (_, index) => {
     return {
@@ -157,6 +162,9 @@ function createGame() {
     pendingCard: null,
     pendingReverseChoice: null,
     pendingMove: null,
+    scoreAnimations: { capys: null, pelicans: null },
+    scoreDeltas: { capys: null, pelicans: null },
+    scoreDisplay: { capys: 0, pelicans: 0 },
     queuedMysteryDraws: 0,
     lastCard: null,
     busy: false,
@@ -662,12 +670,17 @@ function setupPlayerStatus(player, roll, current) {
 }
 
 function boardScoreCardHtml({ team, player, corner }) {
-  const score = state.teams[team].score;
+  const displayScore = scoreDisplay(team);
   const powers = availablePowers(team);
   const progress = powerProgressPercent(team);
   const powerText = powers > 0 ? `${powers} power ready` : `${pointsUntilPower(team)} to power`;
   const place = player.finished ? "Finished" : `Space ${player.position + 1}`;
   const actionClass = boardScoreActionClass(player);
+  const scoreDelta = state.scoreDeltas?.[team];
+  const scoreClass = scoreDelta ? scoreDelta.amount > 0 ? "score-up" : "score-down" : "";
+  const deltaText = scoreDelta
+    ? `<span class="board-score-delta">${scoreDelta.amount > 0 ? "+" : ""}${scoreDelta.amount}</span>`
+    : "";
   const savedReverse = player.savedReverse
     ? `<div class="board-saved-reverse"><strong>Reverse</strong><span>saved</span></div>`
     : "";
@@ -679,7 +692,10 @@ function boardScoreCardHtml({ team, player, corner }) {
           ${playerTokenHtml(player, "board-score-token")}
           <span>${teamLabel(team)}</span>
         </span>
-        <strong>${score}</strong>
+        <strong class="board-score-number ${scoreClass}">
+          <span class="board-score-value">${displayScore}</span>
+          ${deltaText}
+        </strong>
       </div>
       <div class="board-score-player">${player.name} · ${place}</div>
       ${savedReverse}
@@ -1251,9 +1267,71 @@ async function finishPendingAction(player, startingPosition) {
 }
 
 function addPoints(game, team, amount) {
-  game.teams[team].score += amount;
+  setTeamScore(game, team, game.teams[team].score + amount);
   const sign = amount > 0 ? "+" : "";
   addLog(`${teamLabel(team)} team gets ${sign}${amount} points.`);
+}
+
+function setTeamScore(game, team, nextScore) {
+  const before = game.teams[team].score;
+  game.teams[team].score = nextScore;
+  animateTeamScore(game, team, before, nextScore);
+}
+
+function scoreDisplay(team) {
+  return state.scoreDisplay?.[team] ?? state.teams[team].score;
+}
+
+function animateTeamScore(game, team, fromScore, toScore) {
+  if (!game.scoreDisplay || fromScore === toScore) {
+    if (game.scoreDisplay) game.scoreDisplay[team] = toScore;
+    return;
+  }
+
+  if (game.scoreAnimations?.[team]) {
+    cancelAnimationFrame(game.scoreAnimations[team]);
+  }
+
+  const delta = toScore - fromScore;
+  const deltaKey = Date.now() + Math.random();
+  const duration = Math.min(1200, Math.max(560, Math.abs(delta) * 90));
+  const startTime = performance.now();
+  const startDisplay = Number.isFinite(game.scoreDisplay[team]) ? game.scoreDisplay[team] : fromScore;
+  game.scoreDeltas[team] = { amount: delta, key: deltaKey };
+
+  const tick = (now) => {
+    if (game !== state) return;
+    const progress = Math.min(1, (now - startTime) / duration);
+    const eased = 1 - (1 - progress) ** 3;
+    game.scoreDisplay[team] = Math.round(startDisplay + (toScore - startDisplay) * eased);
+    updateBoardScores();
+
+    if (progress < 1) {
+      game.scoreAnimations[team] = requestAnimationFrame(tick);
+      return;
+    }
+
+    game.scoreDisplay[team] = toScore;
+    game.scoreAnimations[team] = null;
+    updateBoardScores();
+    window.setTimeout(() => clearScoreDelta(game, team, deltaKey), 650);
+  };
+
+  game.scoreAnimations[team] = requestAnimationFrame(tick);
+  updateBoardScores();
+}
+
+function clearScoreDelta(game, team, key) {
+  if (game !== state || game.scoreDeltas[team]?.key !== key) return;
+  game.scoreDeltas[team] = null;
+  updateBoardScores();
+}
+
+function cancelScoreAnimations() {
+  if (!state?.scoreAnimations) return;
+  Object.values(state.scoreAnimations).forEach((animation) => {
+    if (animation) cancelAnimationFrame(animation);
+  });
 }
 
 function availablePowers(team) {
@@ -1305,8 +1383,9 @@ function mostAdvancedOpponent(team) {
 
 function switchPoints(game) {
   const capys = game.teams.capys.score;
-  game.teams.capys.score = game.teams.pelicans.score;
-  game.teams.pelicans.score = capys;
+  const pelicans = game.teams.pelicans.score;
+  setTeamScore(game, "capys", pelicans);
+  setTeamScore(game, "pelicans", capys);
   addLog("The teams switched points.");
 }
 
