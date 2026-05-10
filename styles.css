@@ -383,12 +383,34 @@ select {
 
 .space.actionable .space-button-layer {
   transform: translate(calc(var(--raise-x) * 1), calc(var(--raise-y) * 1)) scale(1.07);
+  animation: raised-space-reminder 4.6s ease-in-out 1.8s infinite;
 }
 
 .space.actionable.is-pressed .space-button-layer,
 .space.actionable:active .space-button-layer {
+  animation: none;
   transform: translate(calc(var(--raise-x) * 0.25), calc(var(--raise-y) * 0.25)) scale(1.015);
   transition-duration: 70ms;
+}
+
+@keyframes raised-space-reminder {
+  0%,
+  46%,
+  100% {
+    transform: translate(calc(var(--raise-x) * 1), calc(var(--raise-y) * 1)) scale(1.07);
+  }
+  56% {
+    transform: translate(calc(var(--raise-x) * 1.45), calc(var(--raise-y) * 1.45)) scale(1.11);
+  }
+  66% {
+    transform: translate(calc(var(--raise-x) * 0.45), calc(var(--raise-y) * 0.45)) scale(1.035);
+  }
+  76% {
+    transform: translate(calc(var(--raise-x) * 1.25), calc(var(--raise-y) * 1.25)) scale(1.09);
+  }
+  86% {
+    transform: translate(calc(var(--raise-x) * 1), calc(var(--raise-y) * 1)) scale(1.07);
+  }
 }
 
 .space.actionable .space-path {
