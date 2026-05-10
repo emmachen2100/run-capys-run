@@ -1,0 +1,22 @@
+{
+  "name": "RunCapysRun",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "RunCapysRun": {
+        "$className": "Folder",
+        "Shared": {
+          "$path": "src/shared"
+        }
+      }
+    },
+    "ServerScriptService": {
+      "$path": "src/server"
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "$path": "src/client"
+      }
+    }
+  }
+}

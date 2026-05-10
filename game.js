@@ -332,7 +332,7 @@ function growFromFace(track, degrees, amount) {
 
 function tokenYOffset(degrees, hostHeight) {
   const bottomness = Math.max(0, Math.sin(degrees * Math.PI / 180));
-  return hostHeight / 2 + bottomness * 28;
+  return hostHeight / 2 + bottomness * 12;
 }
 
 function tokenOffsetForAngle(track, degrees) {
