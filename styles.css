@@ -202,7 +202,7 @@ select {
   top: 10px;
   bottom: 10px;
   left: 50%;
-  width: min(1480px, calc(100vw - 28px));
+  width: min(1448px, calc(100vw - 60px));
   transform: translateX(-50%);
   z-index: 6;
   pointer-events: none;
@@ -1611,7 +1611,7 @@ select {
     top: 8px;
     bottom: 8px;
     left: 50%;
-    width: calc(100vw - 16px);
+    width: calc(100vw - 28px);
   }
 
   .board-score-card {
