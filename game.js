@@ -147,9 +147,9 @@ function renderBoard() {
     const outerMid = growFromFace(track, mid, track.thickness);
     const outerEnd = growFromFace(track, end, track.thickness);
     const label = growFromFace(track, mid, track.labelOffset);
-    const token = growFromFace(track, mid, tokenOffsetForAngle(track, mid));
+    const token = spaceCenterPoint(innerStart, innerEnd, outerStart, outerEnd);
     const tokenHostHeight = 76;
-    const tokenHostYOffset = tokenYOffset(mid, tokenHostHeight);
+    const tokenHostYOffset = tokenHostHeight / 2;
     const type = space.type === "save-reverse" ? "reverse save-reverse" : space.type;
 
     const group = createSvgElement("g");
@@ -205,8 +205,7 @@ function buildTrackGeometry(mobile) {
       : { cx: 500, cy: 378, rx: 360, ry: 224, sidePinch: 0 },
     faceTopY: mobile ? 278 : 168,
     thickness: mobile ? 96 : 98,
-    labelOffset: mobile ? 54 : 55,
-    tokenOffset: mobile ? 74 : 76
+    labelOffset: mobile ? 54 : 55
   };
 }
 
@@ -330,16 +329,11 @@ function growFromFace(track, degrees, amount) {
   };
 }
 
-function tokenYOffset(degrees, hostHeight) {
-  const bottomness = Math.max(0, Math.sin(degrees * Math.PI / 180));
-  return hostHeight / 2 + bottomness * 12;
-}
-
-function tokenOffsetForAngle(track, degrees) {
-  const radians = degrees * Math.PI / 180;
-  const sideness = Math.abs(Math.cos(radians));
-  const topness = Math.max(0, -Math.sin(radians));
-  return Math.max(38, track.tokenOffset - sideness * 28 - topness * 8);
+function spaceCenterPoint(innerStart, innerEnd, outerStart, outerEnd) {
+  return {
+    x: roundPoint((innerStart.x + innerEnd.x + outerStart.x + outerEnd.x) / 4),
+    y: roundPoint((innerStart.y + innerEnd.y + outerStart.y + outerEnd.y) / 4)
+  };
 }
 
 function trackPoint(curve, degrees) {
