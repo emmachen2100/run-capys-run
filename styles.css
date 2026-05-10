@@ -1405,6 +1405,11 @@ select {
   padding: 14px;
 }
 
+.side-panel,
+.reference-panel {
+  display: none;
+}
+
 .rules {
   max-width: 850px;
   margin: 10px 0 14px;
