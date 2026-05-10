@@ -464,21 +464,21 @@ select {
 
 .space-icon-line {
   fill: none;
-  stroke: var(--ink);
-  stroke-width: 4;
+  stroke: #5d5148;
+  stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
 }
 
 .space-icon-fill {
-  fill: var(--ink);
+  fill: #5d5148;
 }
 
 .space-icon-dot {
   fill: var(--paper);
-  stroke: var(--ink);
-  stroke-width: 3;
+  stroke: #5d5148;
+  stroke-width: 2.2;
   vector-effect: non-scaling-stroke;
 }
 
@@ -489,16 +489,21 @@ select {
   dominant-baseline: middle;
   paint-order: stroke;
   stroke: rgba(255, 250, 241, 0.86);
-  stroke-width: 4;
+  stroke-width: 2.4;
   vector-effect: non-scaling-stroke;
 }
 
 .space-question {
+  fill: #9d5970;
   font-size: 24px;
 }
 
 .space-arrow-number {
   font-size: 15px;
+}
+
+.move-mark .space-arrow-number {
+  fill: #4e6f3d;
 }
 
 .space-point-value {
@@ -510,44 +515,111 @@ select {
 }
 
 .space-card {
-  fill: #fffdf8;
-  stroke: var(--ink);
-  stroke-width: 3;
+  fill: #fffaf1;
+  stroke: #5d5148;
+  stroke-width: 2.2;
   vector-effect: non-scaling-stroke;
 }
 
+.space-card-band {
+  fill: #77b9cf;
+}
+
 .start-flag {
-  fill: #f8dc9a;
-  stroke: var(--ink);
-  stroke-width: 3;
+  fill: #77a959;
+  stroke: #5d5148;
+  stroke-width: 2.2;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
 }
 
 .finish-flag {
   fill: #fffdf8;
-  stroke: var(--ink);
-  stroke-width: 3;
+  stroke: #5d5148;
+  stroke-width: 2.2;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
 }
 
-.finish-flag-check,
-.start-dot {
-  fill: var(--ink);
+.flag-pole {
+  stroke: #5d5148;
 }
 
-.space-point-good {
+.finish-flag-check {
+  fill: #ce6d86;
+}
+
+.start-dot {
   fill: #f8dc9a;
-  stroke: var(--ink);
-  stroke-width: 3;
+  stroke: #5d5148;
+  stroke-width: 1.5;
+}
+
+.space-arrow-forward .space-icon-line {
+  stroke: #5c8d44;
+}
+
+.space-arrow-forward .space-icon-fill {
+  fill: #5c8d44;
+}
+
+.space-arrow-back .space-icon-line {
+  stroke: #55759a;
+}
+
+.space-arrow-back .space-icon-fill {
+  fill: #55759a;
+}
+
+.space-point-diamond {
+  fill: #f8dc75;
+  stroke: #7b5a16;
+  stroke-width: 2.2;
   vector-effect: non-scaling-stroke;
 }
 
-.space-point-bad {
-  fill: #dfedf2;
-  stroke: var(--ink);
-  stroke-width: 3;
+.space-point-diamond.negative {
+  fill: #ffd889;
+  stroke: #8f5270;
+}
+
+.space-point-value.positive {
+  fill: #5a4310;
+}
+
+.space-point-value.negative {
+  fill: #7f3154;
+}
+
+.mini-spinner-segment {
+  stroke: none;
+}
+
+.mini-spinner-ring {
+  fill: none;
+  stroke: #5d5148;
+  stroke-width: 2.2;
+  vector-effect: non-scaling-stroke;
+}
+
+.mini-spinner-line {
+  stroke: rgba(80, 48, 24, 0.85);
+  stroke-width: 1.6;
+  vector-effect: non-scaling-stroke;
+}
+
+.mini-spinner-center {
+  fill: #5d5148;
+}
+
+.mini-spinner-pointer {
+  fill: #5d5148;
+}
+
+.mini-spinner-leaf {
+  fill: #77a959;
+  stroke: #5d5148;
+  stroke-width: 1.6;
   vector-effect: non-scaling-stroke;
 }
 

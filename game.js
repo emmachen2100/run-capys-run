@@ -339,7 +339,7 @@ function createSpaceMark(space, label, mid, track) {
 
 function appendFlagMark(mark, kind) {
   const pole = createSvgElement("line");
-  pole.classList.add("space-icon-line");
+  pole.classList.add("space-icon-line", "flag-pole");
   pole.setAttribute("x1", -11);
   pole.setAttribute("y1", 12);
   pole.setAttribute("x2", -11);
@@ -388,26 +388,60 @@ function appendMysteryCardMark(mark) {
   question.classList.add("space-icon-text", "space-question");
   question.setAttribute("y", 7);
   question.textContent = "?";
-  mark.append(back, card, question);
+
+  const band = createSvgElement("path");
+  band.classList.add("space-card-band");
+  band.setAttribute("d", "M -10 -9 L 11 -6 L 11 -1 L -10 -4 Z");
+  band.setAttribute("transform", "rotate(8)");
+  mark.append(back, card, band, question);
 }
 
 function appendSpinMark(mark) {
-  const arc = createSvgElement("path");
-  arc.classList.add("space-icon-line");
-  arc.setAttribute("d", "M -13 -1 A 13 13 0 1 1 7 10");
+  const wheel = createSvgElement("g");
+  wheel.classList.add("mini-spinner");
+  const colors = ["#f1a340", "#f8bd61", "#ef8e2f", "#ffc878", "#e97e27", "#f7ad4e"];
+  colors.forEach((color, index) => {
+    const segment = createSvgElement("path");
+    segment.classList.add("mini-spinner-segment");
+    segment.setAttribute("fill", color);
+    segment.setAttribute("d", spinnerSegmentPath(0, 0, 15, index * 60 - 90, (index + 1) * 60 - 90));
+    wheel.appendChild(segment);
+  });
 
-  const head = createSvgElement("path");
-  head.classList.add("space-icon-fill");
-  head.setAttribute("d", "M 7 10 L 15 9 L 10 16 Z");
+  const ring = createSvgElement("circle");
+  ring.classList.add("mini-spinner-ring");
+  ring.setAttribute("r", 15);
+
+  const lines = [0, 60, 120].map((angle) => {
+    const line = createSvgElement("line");
+    line.classList.add("mini-spinner-line");
+    const start = polarPoint(0, 0, 0, angle);
+    const end = polarPoint(0, 0, 15, angle);
+    line.setAttribute("x1", start.x);
+    line.setAttribute("y1", start.y);
+    line.setAttribute("x2", end.x);
+    line.setAttribute("y2", end.y);
+    return line;
+  });
 
   const center = createSvgElement("circle");
-  center.classList.add("space-icon-dot");
-  center.setAttribute("r", 4);
-  mark.append(arc, head, center);
+  center.classList.add("mini-spinner-center");
+  center.setAttribute("r", 3);
+
+  const pointer = createSvgElement("path");
+  pointer.classList.add("mini-spinner-pointer");
+  pointer.setAttribute("d", "M -5 -20 L 5 -20 L 0 -13 Z");
+
+  const leaf = createSvgElement("path");
+  leaf.classList.add("mini-spinner-leaf");
+  leaf.setAttribute("d", "M -4 -17 C -10 -23 -7 -28 1 -24 C 7 -21 5 -16 -1 -15 Z");
+
+  mark.append(wheel, ring, ...lines, center, leaf, pointer);
 }
 
 function appendArrowMark(mark, amount, angle) {
   const arrow = createSvgElement("g");
+  arrow.classList.add(amount > 0 ? "space-arrow-forward" : "space-arrow-back");
   arrow.setAttribute("transform", `rotate(${angle})`);
 
   const line = createSvgElement("line");
@@ -430,15 +464,15 @@ function appendArrowMark(mark, amount, angle) {
 }
 
 function appendPointsMark(mark, points, spinAgain) {
-  const coin = createSvgElement("circle");
-  coin.classList.add(points >= 0 ? "space-point-good" : "space-point-bad");
-  coin.setAttribute("r", spinAgain ? 10 : 13);
-
   const value = createSvgElement("text");
-  value.classList.add("space-icon-text", "space-point-value");
+  value.classList.add("space-icon-text", "space-point-value", points >= 0 ? "positive" : "negative");
   value.setAttribute("y", 4);
   value.textContent = `${points > 0 ? "+" : ""}${points}`;
-  mark.append(coin, value);
+  const diamond = createSvgElement("polygon");
+  diamond.classList.add("space-point-diamond", points >= 0 ? "positive" : "negative");
+  const size = spinAgain ? 12 : 15;
+  diamond.setAttribute("points", `0 ${-size} ${size} 0 0 ${size} ${-size} 0`);
+  mark.append(diamond, value);
 
   if (spinAgain) {
     const spin = createSvgElement("g");
@@ -453,6 +487,20 @@ function pathDirectionAngle(track, degrees, amount) {
   const from = growFromFace(track, degrees, track.labelOffset);
   const to = growFromFace(track, degrees + step * Math.sign(amount), track.labelOffset);
   return Math.atan2(to.y - from.y, to.x - from.x) * 180 / Math.PI;
+}
+
+function spinnerSegmentPath(cx, cy, radius, startAngle, endAngle) {
+  const start = polarPoint(cx, cy, radius, startAngle);
+  const end = polarPoint(cx, cy, radius, endAngle);
+  return `M ${cx} ${cy} L ${start.x} ${start.y} A ${radius} ${radius} 0 0 1 ${end.x} ${end.y} Z`;
+}
+
+function polarPoint(cx, cy, radius, angle) {
+  const radians = angle * Math.PI / 180;
+  return {
+    x: roundPoint(cx + radius * Math.cos(radians)),
+    y: roundPoint(cy + radius * Math.sin(radians))
+  };
 }
 
 function spaceTooltip(space, index) {
