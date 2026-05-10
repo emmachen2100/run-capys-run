@@ -1,3 +1,586 @@
+-- 2D Roblox version of Run, Capys, Run.
+-- The old 3D-side-panel client is kept below in a disabled block while Emma tests this version.
+do
+	local Players = game:GetService("Players")
+	local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+	local localPlayer = Players.LocalPlayer
+	local root = ReplicatedStorage:WaitForChild("RunCapysRun")
+	local remotes = root:WaitForChild("Remotes")
+
+	local stateChanged = remotes:WaitForChild("StateChanged")
+	local requestSpin = remotes:WaitForChild("RequestSpin")
+	local requestNewRound = remotes:WaitForChild("RequestNewRound")
+	local requestSavedReverse = remotes:WaitForChild("RequestSavedReverse")
+	local requestPlayCard = remotes:WaitForChild("RequestPlayCard")
+	local requestDeclineReverse = remotes:WaitForChild("RequestDeclineReverse")
+
+	local currentState
+	local spaceButtons = {}
+	local scoreCards = {}
+
+	local colors = {
+		ink = Color3.fromRGB(28, 24, 21),
+		muted = Color3.fromRGB(94, 83, 74),
+		paper = Color3.fromRGB(255, 250, 241),
+		paperStrong = Color3.fromRGB(255, 244, 223),
+		line = Color3.fromRGB(42, 37, 33),
+		sun = Color3.fromRGB(229, 185, 78),
+		face = Color3.fromRGB(236, 210, 125),
+		capy = Color3.fromRGB(241, 207, 184),
+		pelican = Color3.fromRGB(217, 231, 241),
+		mystery = Color3.fromRGB(239, 201, 180),
+		move = Color3.fromRGB(220, 235, 207),
+		points = Color3.fromRGB(246, 239, 217),
+	}
+
+	local function create(className, props)
+		local instance = Instance.new(className)
+		for key, value in pairs(props or {}) do
+			instance[key] = value
+		end
+		return instance
+	end
+
+	local function corner(parent, radius)
+		create("UICorner", { CornerRadius = radius or UDim.new(0, 6), Parent = parent })
+	end
+
+	local function stroke(parent, thickness)
+		create("UIStroke", {
+			Color = colors.line,
+			Thickness = thickness or 2,
+			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+			Parent = parent,
+		})
+	end
+
+	local gui = create("ScreenGui", {
+		Name = "RunCapysRun2D",
+		IgnoreGuiInset = true,
+		ResetOnSpawn = false,
+		Parent = localPlayer:WaitForChild("PlayerGui"),
+	})
+
+	local rootFrame = create("Frame", {
+		BackgroundColor3 = colors.paper,
+		BorderSizePixel = 0,
+		Size = UDim2.fromScale(1, 1),
+		Parent = gui,
+	})
+
+	create("TextLabel", {
+		BackgroundTransparency = 1,
+		Font = Enum.Font.GothamBold,
+		Text = "EMMA'S BOARD GAME",
+		TextColor3 = Color3.fromRGB(79, 71, 65),
+		TextSize = 13,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Position = UDim2.fromOffset(28, 18),
+		Size = UDim2.fromOffset(220, 22),
+		Parent = rootFrame,
+	})
+
+	local title = create("TextLabel", {
+		BackgroundTransparency = 1,
+		Font = Enum.Font.FredokaOne,
+		Text = "Run, Capys, Run",
+		TextColor3 = Color3.fromRGB(157, 89, 112),
+		TextSize = 46,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 18),
+		Size = UDim2.fromOffset(520, 58),
+		Parent = rootFrame,
+	})
+
+	local newRoundButton = create("TextButton", {
+		BackgroundColor3 = Color3.fromRGB(255, 253, 248),
+		Font = Enum.Font.GothamBold,
+		Text = "New game",
+		TextColor3 = colors.ink,
+		TextSize = 18,
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -28, 0, 22),
+		Size = UDim2.fromOffset(130, 44),
+		Parent = rootFrame,
+	})
+	stroke(newRoundButton, 2)
+
+	local board = create("Frame", {
+		Name = "Board",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundTransparency = 1,
+		Position = UDim2.fromScale(0.5, 0.54),
+		Size = UDim2.fromOffset(1100, 700),
+		Parent = rootFrame,
+	})
+	local boardScale = create("UIScale", { Scale = 1, Parent = board })
+	local boardCenter = Vector2.new(550, 360)
+
+	local face = create("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundColor3 = colors.face,
+		Position = UDim2.fromOffset(boardCenter.X, boardCenter.Y + 20),
+		Size = UDim2.fromOffset(610, 350),
+		Parent = board,
+	})
+	corner(face, UDim.new(0.5, 0))
+	stroke(face, 4)
+
+	local function facePart(name, position, size, color)
+		local part = create("Frame", {
+			Name = name,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			BackgroundColor3 = color,
+			BorderSizePixel = 0,
+			Position = UDim2.fromOffset(position.X, position.Y),
+			Size = UDim2.fromOffset(size.X, size.Y),
+			Parent = board,
+		})
+		corner(part, UDim.new(1, 0))
+		return part
+	end
+
+	facePart("LeftEye", Vector2.new(430, 310), Vector2.new(24, 48), Color3.fromRGB(34, 27, 23))
+	facePart("RightEye", Vector2.new(670, 310), Vector2.new(24, 48), Color3.fromRGB(34, 27, 23))
+	facePart("LeftCheek", Vector2.new(420, 440), Vector2.new(88, 88), Color3.fromRGB(244, 224, 174)).BackgroundTransparency = 0.45
+	facePart("RightCheek", Vector2.new(680, 440), Vector2.new(88, 88), Color3.fromRGB(244, 224, 174)).BackgroundTransparency = 0.45
+	local nose = facePart("Nose", Vector2.new(550, 470), Vector2.new(150, 80), Color3.fromRGB(142, 105, 45))
+	stroke(nose, 3)
+
+	local leftEar = create("Frame", {
+		BackgroundColor3 = colors.face,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromOffset(375, 165),
+		Size = UDim2.fromOffset(190, 130),
+		Rotation = -10,
+		Parent = board,
+	})
+	corner(leftEar, UDim.new(0.5, 0))
+	stroke(leftEar, 3)
+	create("TextLabel", {
+		BackgroundTransparency = 1,
+		Font = Enum.Font.FredokaOne,
+		Text = "Characters",
+		TextColor3 = colors.ink,
+		TextSize = 22,
+		Rotation = 10,
+		Size = UDim2.fromScale(1, 0.42),
+		Parent = leftEar,
+	})
+
+	local rightEar = create("Frame", {
+		BackgroundColor3 = colors.face,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromOffset(725, 165),
+		Size = UDim2.fromOffset(190, 130),
+		Rotation = 10,
+		Parent = board,
+	})
+	corner(rightEar, UDim.new(0.5, 0))
+	stroke(rightEar, 3)
+	local mysteryEarLabel = create("TextLabel", {
+		BackgroundTransparency = 1,
+		Font = Enum.Font.FredokaOne,
+		Text = "Mystery cards\n?",
+		TextColor3 = colors.ink,
+		TextSize = 20,
+		TextWrapped = true,
+		Rotation = -10,
+		Position = UDim2.fromScale(0.08, 0.1),
+		Size = UDim2.fromScale(0.84, 0.82),
+		Parent = rightEar,
+	})
+
+	local spinner = create("TextButton", {
+		BackgroundColor3 = Color3.fromRGB(241, 163, 64),
+		Font = Enum.Font.FredokaOne,
+		Text = "Spin",
+		TextColor3 = colors.ink,
+		TextSize = 24,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromOffset(550, 150),
+		Size = UDim2.fromOffset(140, 140),
+		Parent = board,
+	})
+	corner(spinner, UDim.new(1, 0))
+	stroke(spinner, 3)
+
+	local spinnerPlayer = create("TextLabel", {
+		BackgroundColor3 = colors.paper,
+		Font = Enum.Font.FredokaOne,
+		Text = "",
+		TextColor3 = colors.ink,
+		TextSize = 19,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(54, 42),
+		Parent = spinner,
+	})
+	corner(spinnerPlayer, UDim.new(1, 0))
+	stroke(spinnerPlayer, 2)
+
+	local cardPopup = create("Frame", {
+		BackgroundColor3 = colors.paper,
+		Visible = false,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(340, 245),
+		Parent = rootFrame,
+	})
+	corner(cardPopup, UDim.new(0, 8))
+	stroke(cardPopup, 4)
+
+	local cardTitle = create("TextLabel", {
+		BackgroundTransparency = 1,
+		Font = Enum.Font.FredokaOne,
+		Text = "",
+		TextColor3 = colors.ink,
+		TextSize = 30,
+		TextWrapped = true,
+		Position = UDim2.fromOffset(18, 18),
+		Size = UDim2.new(1, -36, 0, 42),
+		Parent = cardPopup,
+	})
+
+	local cardText = create("TextLabel", {
+		BackgroundTransparency = 1,
+		Font = Enum.Font.GothamBold,
+		Text = "",
+		TextColor3 = colors.muted,
+		TextSize = 18,
+		TextWrapped = true,
+		Position = UDim2.fromOffset(22, 68),
+		Size = UDim2.new(1, -44, 0, 82),
+		Parent = cardPopup,
+	})
+
+	local cardPrimary = create("TextButton", {
+		BackgroundColor3 = colors.sun,
+		Font = Enum.Font.FredokaOne,
+		Text = "Play card",
+		TextColor3 = colors.ink,
+		TextSize = 20,
+		Position = UDim2.new(0, 22, 1, -76),
+		Size = UDim2.new(1, -44, 0, 46),
+		Parent = cardPopup,
+	})
+	stroke(cardPrimary, 2)
+
+	local cardSecondary = create("TextButton", {
+		BackgroundColor3 = colors.paperStrong,
+		Font = Enum.Font.GothamBold,
+		Text = "Let card play",
+		TextColor3 = colors.ink,
+		TextSize = 18,
+		Visible = false,
+		Position = UDim2.new(0, 22, 1, -128),
+		Size = UDim2.new(1, -44, 0, 40),
+		Parent = cardPopup,
+	})
+	stroke(cardSecondary, 2)
+
+	local function spaceColor(space)
+		if space.type == "start" or space.type == "finish" then
+			return Color3.fromRGB(248, 220, 154)
+		elseif space.type == "mystery" then
+			return colors.mystery
+		elseif space.type == "points" then
+			return colors.points
+		elseif space.type == "move" then
+			return colors.move
+		end
+		return colors.paper
+	end
+
+	local function teamLabel(teamId)
+		local teamInfo = currentState and currentState.teamInfo and currentState.teamInfo[teamId]
+		return teamInfo and teamInfo.label or teamId
+	end
+
+	local function findCurrentPlayer()
+		if not currentState or not currentState.players then
+			return nil
+		end
+		return currentState.players[currentState.turnIndex]
+	end
+
+	local function localTurn()
+		local playerState = findCurrentPlayer()
+		return playerState and playerState.userId == localPlayer.UserId
+	end
+
+	local function pendingCardPlayer()
+		local pending = currentState and currentState.pendingCard
+		return pending and currentState.players[pending.playerId] or nil
+	end
+
+	local function localPendingCard()
+		local playerState = pendingCardPlayer()
+		return playerState and playerState.userId == localPlayer.UserId
+	end
+
+	local function localReverseChoice()
+		local choice = currentState and currentState.pendingReverseChoice
+		if not choice then
+			return false
+		end
+		local playerState = currentState.players[choice.reversePlayerId]
+		return playerState and playerState.userId == localPlayer.UserId
+	end
+
+	local function setButtonEnabled(button, enabled)
+		button.Active = enabled
+		button.AutoButtonColor = enabled
+		button.TextTransparency = enabled and 0 or 0.45
+		button.BackgroundTransparency = enabled and 0 or 0.25
+	end
+
+	local function tokenText(playerState)
+		local prefix = playerState.team == "capys" and "C" or "P"
+		return prefix .. tostring(playerState.id)
+	end
+
+	local function buildSpaces(boardSpaces)
+		for _, button in pairs(spaceButtons) do
+			button:Destroy()
+		end
+		table.clear(spaceButtons)
+
+		for index, space in ipairs(boardSpaces) do
+			local count = #boardSpaces
+			local angle = math.rad(220 + ((index - 1) / (count - 1)) * 280)
+			local x = boardCenter.X + math.cos(angle) * 410
+			local y = boardCenter.Y + 40 + math.sin(angle) * 260
+			local button = create("TextButton", {
+				Name = "Space" .. index,
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				BackgroundColor3 = spaceColor(space),
+				Font = Enum.Font.FredokaOne,
+				Text = space.label,
+				TextColor3 = colors.ink,
+				TextSize = space.label == "" and 10 or 14,
+				TextWrapped = true,
+				Rotation = math.deg(angle) + 90,
+				Position = UDim2.fromOffset(x, y),
+				Size = UDim2.fromOffset(92, 54),
+				Parent = board,
+			})
+			stroke(button, 3)
+			spaceButtons[index] = button
+		end
+	end
+
+	local function renderTokens()
+		for _, spaceButton in pairs(spaceButtons) do
+			for _, child in ipairs(spaceButton:GetChildren()) do
+				if child.Name == "Token" then
+					child:Destroy()
+				end
+			end
+		end
+
+		local byPosition = {}
+		for _, playerState in ipairs(currentState.players) do
+			if not playerState.finished then
+				byPosition[playerState.position] = byPosition[playerState.position] or {}
+				table.insert(byPosition[playerState.position], playerState)
+			end
+		end
+
+		for position, playersAtSpace in pairs(byPosition) do
+			local parent = spaceButtons[position]
+			if parent then
+				for index, playerState in ipairs(playersAtSpace) do
+					local token = create("TextLabel", {
+						Name = "Token",
+						BackgroundColor3 = playerState.team == "capys" and colors.capy or colors.pelican,
+						Font = Enum.Font.FredokaOne,
+						Text = tokenText(playerState),
+						TextColor3 = colors.ink,
+						TextSize = 12,
+						AnchorPoint = Vector2.new(0.5, 0.5),
+						Position = UDim2.fromScale(0.25 + (index - 1) * 0.2, 0.75),
+						Size = UDim2.fromOffset(28, 24),
+						Parent = parent,
+					})
+					corner(token, UDim.new(1, 0))
+					stroke(token, 1)
+				end
+			end
+		end
+	end
+
+	local function scoreCorner(playerState)
+		if #currentState.players <= 2 then
+			return playerState.team == "capys"
+				and { UDim2.fromOffset(28, 92), Vector2.new(0, 0) }
+				or { UDim2.new(1, -28, 0, 92), Vector2.new(1, 0) }
+		end
+		if playerState.team == "capys" then
+			return playerState.id == 1
+				and { UDim2.fromOffset(28, 92), Vector2.new(0, 0) }
+				or { UDim2.new(0, 28, 1, -142), Vector2.new(0, 1) }
+		end
+		return playerState.id == 3
+			and { UDim2.new(1, -28, 0, 92), Vector2.new(1, 0) }
+			or { UDim2.new(1, -28, 1, -142), Vector2.new(1, 1) }
+	end
+
+	local function renderScoreCards()
+		for _, card in pairs(scoreCards) do
+			card:Destroy()
+		end
+		table.clear(scoreCards)
+
+		for _, playerState in ipairs(currentState.players) do
+			local place = scoreCorner(playerState)
+			local card = create("Frame", {
+				BackgroundColor3 = playerState.team == "capys" and colors.capy or colors.pelican,
+				AnchorPoint = place[2],
+				Position = place[1],
+				Size = UDim2.fromOffset(210, 96),
+				Parent = rootFrame,
+			})
+			corner(card, UDim.new(0, 6))
+			stroke(card, 2)
+			scoreCards[playerState.userId] = card
+
+			create("TextLabel", {
+				BackgroundTransparency = 1,
+				Font = Enum.Font.FredokaOne,
+				Text = playerState.name,
+				TextColor3 = colors.ink,
+				TextSize = 18,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				Position = UDim2.fromOffset(12, 8),
+				Size = UDim2.new(1, -48, 0, 22),
+				Parent = card,
+			})
+			create("TextLabel", {
+				BackgroundTransparency = 1,
+				Font = Enum.Font.FredokaOne,
+				Text = tostring(currentState.teams[playerState.team].score),
+				TextColor3 = colors.ink,
+				TextSize = 20,
+				TextXAlignment = Enum.TextXAlignment.Right,
+				Position = UDim2.new(1, -44, 0, 8),
+				Size = UDim2.fromOffset(32, 22),
+				Parent = card,
+			})
+			local status = playerState.finished and "Finished" or ("Space " .. tostring(playerState.position))
+			if playerState.savedReverse then
+				status = status .. "  Reverse saved"
+			end
+			create("TextLabel", {
+				BackgroundTransparency = 1,
+				Font = Enum.Font.GothamBold,
+				Text = teamLabel(playerState.team) .. " team\n" .. status,
+				TextColor3 = colors.ink,
+				TextSize = 14,
+				TextWrapped = true,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				Position = UDim2.fromOffset(12, 36),
+				Size = UDim2.new(1, -24, 0, 46),
+				Parent = card,
+			})
+		end
+	end
+
+	local function renderCardPopup()
+		local pending = currentState.pendingCard
+		local choice = currentState.pendingReverseChoice
+		cardPopup.Visible = pending ~= nil
+		if not pending then
+			return
+		end
+		if choice then
+			local reversePlayer = currentState.players[choice.reversePlayerId]
+			cardTitle.Text = "Use reverse?"
+			cardText.Text = reversePlayer.name .. " can reverse " .. pending.title .. ". " .. pending.reverseText
+			cardPrimary.Text = "Use reverse"
+			cardSecondary.Visible = true
+		else
+			local cardPlayer = pendingCardPlayer()
+			cardTitle.Text = pending.title
+			cardText.Text = cardPlayer.name .. " drew this card. " .. pending.text
+			cardPrimary.Text = "Play card"
+			cardSecondary.Visible = false
+		end
+	end
+
+	local function render()
+		if not currentState then
+			return
+		end
+		if #spaceButtons ~= #currentState.boardSpaces then
+			buildSpaces(currentState.boardSpaces)
+		end
+		local current = findCurrentPlayer()
+		local isLocalTurn = localTurn()
+		if currentState.winner then
+			spinner.Text = teamLabel(currentState.winner) .. " win!"
+		elseif currentState.pendingCard then
+			spinner.Text = "Card"
+		elseif currentState.spinResult then
+			spinner.Text = tostring(currentState.spinResult)
+		else
+			spinner.Text = "Spin"
+		end
+		spinnerPlayer.Text = current and tokenText(current) or ""
+		local canSpin = isLocalTurn and not currentState.busy and not currentState.over and not currentState.pendingCard and not currentState.pendingReverseChoice
+		setButtonEnabled(spinner, canSpin)
+		mysteryEarLabel.Text = string.format("Mystery cards\n?\n%d left", currentState.deckLeft or 0)
+		renderTokens()
+		renderScoreCards()
+		renderCardPopup()
+	end
+
+	spinner.MouseButton1Click:Connect(function()
+		if localTurn() and currentState and not currentState.busy and not currentState.over and not currentState.pendingCard then
+			requestSpin:FireServer()
+		end
+	end)
+
+	cardPrimary.MouseButton1Click:Connect(function()
+		if localReverseChoice() then
+			requestSavedReverse:FireServer()
+		elseif localPendingCard() then
+			requestPlayCard:FireServer()
+		end
+	end)
+
+	cardSecondary.MouseButton1Click:Connect(function()
+		if localReverseChoice() then
+			requestDeclineReverse:FireServer()
+		end
+	end)
+
+	newRoundButton.MouseButton1Click:Connect(function()
+		requestNewRound:FireServer()
+	end)
+
+	stateChanged.OnClientEvent:Connect(function(nextState)
+		currentState = nextState
+		render()
+	end)
+
+	local function resizeForViewport()
+		local camera = workspace.CurrentCamera
+		local viewport = camera and camera.ViewportSize or Vector2.new(1280, 720)
+		local scale = math.min(viewport.X / 1220, viewport.Y / 780, 1)
+		boardScale.Scale = math.max(0.62, scale)
+		title.TextSize = viewport.X < 760 and 32 or 46
+	end
+
+	if workspace.CurrentCamera then
+		workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(resizeForViewport)
+	end
+	resizeForViewport()
+end
+
+if false then
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -435,3 +1018,4 @@ if workspace.CurrentCamera then
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(resizeForViewport)
 end
 resizeForViewport()
+end

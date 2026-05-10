@@ -31,6 +31,7 @@ local state
 local joinOrder = {}
 local joinCounter = 0
 local roundCounter = 0
+local USE_3D_BOARD = false
 
 local SPACE_COLORS = {
 	start = Color3.fromRGB(248, 220, 154),
@@ -150,11 +151,17 @@ local function buildBoard()
 		boardModel:Destroy()
 	end
 
+	spaceParts = {}
+	tokenParts = {}
+
+	if not USE_3D_BOARD then
+		boardModel = nil
+		return
+	end
+
 	boardModel = Instance.new("Model")
 	boardModel.Name = "RunCapysRunBoard"
 	boardModel.Parent = Workspace
-	spaceParts = {}
-	tokenParts = {}
 
 	local base = makePart(boardModel, "BoardBase", Vector3.new(150, 1, 105), CFrame.new(0, 0, 0), Color3.fromRGB(255, 244, 223))
 	base.Material = Enum.Material.SmoothPlastic
@@ -189,6 +196,10 @@ local function tokenPosition(playerState)
 end
 
 local function updateTokens()
+	if not USE_3D_BOARD then
+		return
+	end
+
 	for _, playerState in ipairs(state.players) do
 		local token = tokenParts[playerState.userId]
 		if playerState.finished then
