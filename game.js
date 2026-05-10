@@ -36,6 +36,9 @@ const pendingMoveTitleEl = document.querySelector("#pending-move-title");
 const pendingMoveHelpEl = document.querySelector("#pending-move-help");
 
 const MOVE_STEP_MS = 240;
+const SOUND_VOLUME = 0.18;
+
+let audioContext = null;
 
 const boardSpaces = [
   { label: "Start", type: "start" },
@@ -893,6 +896,71 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function getAudioContext() {
+  const AudioCtor = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtor) return null;
+
+  if (!audioContext) {
+    audioContext = new AudioCtor();
+  }
+
+  if (audioContext.state === "suspended") {
+    audioContext.resume().catch(() => {});
+  }
+
+  return audioContext;
+}
+
+function playTone(frequency, delay = 0, duration = 0.12, type = "sine", volume = 0.25) {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  const start = ctx.currentTime + delay;
+  const stop = start + duration;
+  const oscillator = ctx.createOscillator();
+  const gain = ctx.createGain();
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(frequency, start);
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, SOUND_VOLUME * volume), start + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.0001, stop);
+  oscillator.connect(gain).connect(ctx.destination);
+  oscillator.start(start);
+  oscillator.stop(stop + 0.02);
+}
+
+function playMoveSound(step) {
+  playTone(360 + (step % 5) * 42, 0, 0.055, "triangle", 0.18);
+}
+
+function playSpinSound() {
+  for (let step = 0; step < 10; step += 1) {
+    playTone(260 + step * 46, step * 0.045, 0.075, "sawtooth", 0.12);
+  }
+  playTone(820, 0.52, 0.12, "triangle", 0.18);
+}
+
+function playPointSound(amount) {
+  const notes = amount >= 0 ? [523, 659, 784] : [392, 330, 247];
+  notes.forEach((note, index) => playTone(note, index * 0.08, 0.16, "sine", 0.22));
+}
+
+function playCardSound() {
+  playTone(620, 0, 0.055, "square", 0.09);
+  playTone(930, 0.06, 0.085, "triangle", 0.11);
+}
+
+function playReverseSound() {
+  playTone(880, 0, 0.09, "triangle", 0.18);
+  playTone(440, 0.075, 0.16, "sawtooth", 0.12);
+}
+
+function playWinSound() {
+  [523, 659, 784, 1046].forEach((note, index) => {
+    playTone(note, index * 0.12, 0.2, "triangle", 0.24);
+  });
+}
+
 function spin() {
   if (!canSpinNow()) return;
 
@@ -989,6 +1057,7 @@ function raceSpin() {
 }
 
 function spinWheel() {
+  playSpinSound();
   const result = randomSpinResult();
   const segmentCenter = (result - 1) * 60 + 30;
   const targetRotation = (360 - segmentCenter) % 360;
@@ -1021,8 +1090,9 @@ async function movePlayer(game, player, amount, source) {
   const path = movementPath(start, amount, finish);
   const bounced = amount > 0 && start + amount > finish;
 
-  for (const position of path) {
+  for (const [step, position] of path.entries()) {
     player.position = position;
+    playMoveSound(step);
     updateUi();
     await sleep(MOVE_STEP_MS);
   }
@@ -1126,6 +1196,7 @@ async function drawMystery(game, player, chained = false) {
   }
 
   const card = game.deck.pop();
+  playCardSound();
   game.lastCard = card;
   game.busy = false;
   game.pendingCard = {
@@ -1178,6 +1249,7 @@ async function playPendingCard() {
   if (reversePlayer) {
     pending.reverseOffered = true;
     state.pendingReverseChoice = { reversePlayerId: reversePlayer.id };
+    playReverseSound();
     addLog(`${reversePlayer.name} can use a saved reverse.`);
     updateUi();
     return;
@@ -1293,6 +1365,7 @@ function animateTeamScore(game, team, fromScore, toScore) {
   }
 
   const delta = toScore - fromScore;
+  playPointSound(delta);
   const deltaKey = Date.now() + Math.random();
   const duration = Math.min(1200, Math.max(560, Math.abs(delta) * 90));
   const startTime = performance.now();
@@ -1407,6 +1480,7 @@ async function useSavedReverse() {
   if (!player?.savedReverse || !canReverseCard(pending.card)) return;
 
   player.savedReverse = false;
+  playReverseSound();
   addLog(`${player.name} used a saved reverse on ${cardPlayer.name}'s ${pending.card.title}.`);
   await completePendingCard(true);
 }
@@ -1445,6 +1519,7 @@ function checkWinner(game) {
 
   game.over = true;
   game.busy = false;
+  playWinSound();
   const banner = document.createElement("div");
   banner.className = "winner-banner";
   banner.innerHTML = `<h2>${teamLabel(winner)} win</h2><p>Final score: Capys ${game.teams.capys.score}, Pelicans ${game.teams.pelicans.score}</p><button type="button" id="play-again">Play again</button>`;
