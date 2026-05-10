@@ -57,8 +57,8 @@ const boardSpaces = [
 ];
 
 const cardBlueprints = [
-  ...repeatCard(3, { title: "Move forward", text: "Move forward 3 spaces.", apply: async (game, player) => movePlayer(game, player, 3, "card") }),
-  ...repeatCard(3, { title: "Move backward", text: "Move back 1 space.", apply: async (game, player) => movePlayer(game, player, -1, "card") }),
+  ...repeatCard(3, { title: "Move forward", text: "Move forward 3 spaces.", reverseMoveAmount: 3, apply: async (game, player) => movePlayer(game, player, 3, "card") }),
+  ...repeatCard(3, { title: "Move backward", text: "Move back 1 space.", reverseMoveAmount: -1, apply: async (game, player) => movePlayer(game, player, -1, "card") }),
   ...repeatCard(3, { title: "Reverse", text: "Save this reverse card for later.", apply: (game, player) => { player.savedReverse = true; addLog(`${player.name} saved a reverse card.`); } }),
   ...repeatCard(3, { title: "Back to start", text: "Go back to start.", apply: async (game, player) => movePlayerTo(game, player, 0, "card") }),
   ...repeatCard(7, { title: "+ points", text: "Add 5 points to your team.", apply: (game, player) => addPoints(game, player.team, 5) }),
@@ -366,7 +366,9 @@ function updateUi() {
   turnHelpEl.textContent = setup ? setupHelpText() : "Move counter-clockwise around the capybara. Use powers before you spin.";
   spinButton.textContent = setup ? "Spin for teams" : "Spin";
   spinButton.disabled = state.busy || state.over;
-  reverseButton.disabled = setup || state.busy || state.over || !current.savedReverse;
+  const reversePlayer = savedReverseResponder();
+  reverseButton.textContent = reversePlayer ? `Use ${reversePlayer.name}'s reverse` : "Use saved reverse";
+  reverseButton.disabled = setup || state.over || !reversePlayer;
 
   updateSpaces(current);
   updateTeams();
@@ -795,6 +797,15 @@ function hasPendingAction() {
   return Boolean(state.pendingCard || state.pendingMove);
 }
 
+function savedReverseResponder() {
+  if (state.phase !== "race" || state.over || !state.pendingCard) return null;
+  const cardPlayer = state.players[state.pendingCard.playerId];
+  if (!cardPlayer || !Number.isFinite(state.pendingCard.card.reverseMoveAmount)) return null;
+  return state.players.find((player) => {
+    return player.team !== cardPlayer.team && player.savedReverse && !player.finished;
+  }) || null;
+}
+
 async function playPendingCard() {
   const pending = state.pendingCard;
   if (!pending || state.over) return;
@@ -945,13 +956,21 @@ function switchPlacesWithLeader(game, player) {
   updateUi();
 }
 
-function useSavedReverse() {
-  const player = currentPlayer();
-  if (!player.savedReverse || state.busy || state.over) return;
+async function useSavedReverse() {
+  const pending = state.pendingCard;
+  const player = savedReverseResponder();
+  if (!pending || !player) return;
+  const cardPlayer = state.players[pending.playerId];
+  const amount = pending.card.reverseMoveAmount;
+  const startingPosition = player.position;
+  state.pendingCard = null;
+  state.usedCards.push(pending.card);
+  if (state.lastCard === pending.card) state.lastCard = null;
   player.savedReverse = false;
-  state.direction *= -1;
-  addLog(`${player.name} used a saved reverse.`);
-  endTurn();
+  addLog(`${player.name} used a saved reverse on ${cardPlayer.name}'s ${pending.card.title}.`);
+  updateUi();
+  await movePlayer(state, player, amount, "card");
+  await finishPendingAction(player, startingPosition);
 }
 
 function endTurn() {
