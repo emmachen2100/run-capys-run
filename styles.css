@@ -1054,6 +1054,7 @@ select {
 
 .spinner.is-disabled {
   cursor: default;
+  pointer-events: none;
 }
 
 .spinner-player-token {

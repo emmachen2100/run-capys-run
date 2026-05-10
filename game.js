@@ -1132,7 +1132,9 @@ function hasPendingSpinAgain() {
 }
 
 function canSpinNow() {
-  return !state.busy && !state.over && (!hasPendingAction() || hasPendingSpinAgain());
+  if (state.busy || state.over) return false;
+  if (state.pendingCard || state.pendingReverseChoice) return false;
+  return !state.pendingMove || hasPendingSpinAgain();
 }
 
 function nextSavedReverseResponder(pending) {
