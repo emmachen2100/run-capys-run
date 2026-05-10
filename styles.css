@@ -447,13 +447,13 @@ select {
 }
 
 .capy-ear-left {
-  left: 7%;
+  left: 6.5%;
   transform: rotate(-11deg);
   border-radius: 50%;
 }
 
 .capy-ear-right {
-  right: 7%;
+  right: 6.5%;
   transform: rotate(11deg);
   border-radius: 50%;
 }

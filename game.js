@@ -191,8 +191,8 @@ function renderBoard() {
 
 function buildTrackGeometry(mobile) {
   return {
-    start: mobile ? 224 : 225,
-    span: mobile ? -268 : -270,
+    start: mobile ? 220 : 220,
+    span: mobile ? -260 : -260,
     center: mobile ? { x: 500, y: 382 } : { x: 500, y: 378 },
     face: mobile
       ? { cx: 500, cy: 392, rx: 392, ry: 166, sidePinch: 24 }
