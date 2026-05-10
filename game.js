@@ -291,7 +291,7 @@ function appendSpaceLabel(textEl, label) {
     lines.forEach((lineText, index) => {
       const line = createSvgElement("tspan");
       line.setAttribute("x", textEl.getAttribute("x"));
-      line.setAttribute("dy", index === 0 ? `${(1 - lines.length) * 0.55}em` : "1.1em");
+      line.setAttribute("dy", index === 0 ? `${(1 - lines.length) * 0.5}em` : "1em");
       line.textContent = lineText;
       textEl.appendChild(line);
     });
@@ -307,7 +307,7 @@ function appendSpaceLabel(textEl, label) {
   words.forEach((word, index) => {
     const line = createSvgElement("tspan");
     line.setAttribute("x", textEl.getAttribute("x"));
-    line.setAttribute("dy", index === 0 ? `${(1 - words.length) * 0.55}em` : "1.1em");
+    line.setAttribute("dy", index === 0 ? `${(1 - words.length) * 0.5}em` : "1em");
     line.textContent = word;
     textEl.appendChild(line);
   });
