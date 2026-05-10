@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Run, Capys, Run</title>
-    <link rel="stylesheet" href="styles.css?v=20260509-ear-seams-2">
+    <link rel="stylesheet" href="styles.css?v=20260510-card-popup">
   </head>
   <body>
     <main class="app-shell">
@@ -57,6 +57,13 @@
                 </div>
               </div>
               <div id="spaces" class="spaces"></div>
+              <button id="mystery-card-popup" class="mystery-card-popup" type="button" hidden>
+                <span class="eyebrow">Mystery card</span>
+                <span id="mystery-card-player" class="mystery-card-player"></span>
+                <strong id="mystery-card-title"></strong>
+                <span id="mystery-card-text"></span>
+                <span class="mystery-card-action">Play card</span>
+              </button>
             </div>
           </section>
 
@@ -111,7 +118,7 @@
         </div>
         <div id="rules" class="rules" hidden>
           <p>First spin to pick teams. In a 2 player game, the highest spin becomes the Capys team. In a 4 player game, players 1 and 2 add their spins, players 3 and 4 add theirs, and the higher total becomes the Capys team.</p>
-          <p>Spin and move counter-clockwise around the capybara board. Pieces move one space at a time. If a spin goes past Finish, the piece bounces back the extra spaces. When you land on a labeled square, press the matching button to use that square. Mystery cards can move players, swap scores, or give a reverse card to save for later. A saved reverse can only be used when the other team draws a movement card, and the reverse holder gets that movement instead. Read a mystery card first, then press Play card.</p>
+          <p>Spin and move counter-clockwise around the capybara board. Pieces move one space at a time. If a spin goes past Finish, the piece bounces back the extra spaces. When you land on a labeled square, press the matching button to use that square. Mystery cards pop up over the board so the player who drew one can read it and tap it to play. A saved reverse can only be used when the other team draws a movement card, and the reverse holder gets that movement instead.</p>
           <p>Every 15 points unlocks a choice: move your current player up 5 spaces or move the other team's leading player down 5 spaces.</p>
           <p>A team wins as soon as one of its players reaches the Finish square.</p>
         </div>
@@ -123,6 +130,6 @@
       </section>
     </main>
 
-    <script src="game.js?v=20260509-ear-seams-2"></script>
+    <script src="game.js?v=20260510-card-popup"></script>
   </body>
 </html>

@@ -168,6 +168,62 @@ select {
   z-index: 1;
 }
 
+.mystery-card-popup {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  z-index: 7;
+  width: min(280px, 70%);
+  min-height: 190px;
+  display: grid;
+  grid-template-rows: auto auto auto 1fr auto;
+  gap: 8px;
+  justify-items: center;
+  padding: 18px 18px 16px;
+  transform: translate(-50%, -50%) rotate(-2deg);
+  border: 4px solid var(--line);
+  background: #fffaf1;
+  box-shadow: 8px 8px 0 rgba(42, 37, 33, 0.2);
+  color: var(--ink);
+  text-align: center;
+}
+
+.mystery-card-popup[hidden] {
+  display: none;
+}
+
+.mystery-card-popup .eyebrow {
+  margin: 0;
+  color: var(--muted);
+}
+
+.mystery-card-player {
+  font-size: 0.9rem;
+  font-weight: 900;
+  color: #9d5970;
+}
+
+.mystery-card-popup strong {
+  font-size: clamp(1.45rem, 3vw, 2.2rem);
+  line-height: 0.95;
+}
+
+.mystery-card-popup span:not(.eyebrow):not(.mystery-card-player):not(.mystery-card-action) {
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.mystery-card-action {
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px 12px;
+  border: 3px solid var(--line);
+  background: var(--sun);
+  box-shadow: 3px 3px 0 rgba(42, 37, 33, 0.18);
+  font-weight: 900;
+}
+
 .track-svg {
   position: absolute;
   inset: 0;

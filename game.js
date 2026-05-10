@@ -22,6 +22,10 @@ const pendingCardEl = document.querySelector("#pending-card");
 const pendingCardTitleEl = document.querySelector("#pending-card-title");
 const pendingCardTextEl = document.querySelector("#pending-card-text");
 const playCardButton = document.querySelector("#play-card");
+const mysteryCardPopupEl = document.querySelector("#mystery-card-popup");
+const mysteryCardPlayerEl = document.querySelector("#mystery-card-player");
+const mysteryCardTitleEl = document.querySelector("#mystery-card-title");
+const mysteryCardTextEl = document.querySelector("#mystery-card-text");
 const pendingMoveEl = document.querySelector("#pending-move");
 const pendingMoveTitleEl = document.querySelector("#pending-move-title");
 const playMoveButton = document.querySelector("#play-move");
@@ -496,11 +500,17 @@ function updateMysteryEar() {
 
 function updatePendingActions() {
   if (state.pendingCard) {
-    pendingCardEl.hidden = false;
+    const player = state.players[state.pendingCard.playerId];
+    pendingCardEl.hidden = true;
     pendingCardTitleEl.textContent = state.pendingCard.card.title;
     pendingCardTextEl.textContent = state.pendingCard.card.text;
+    mysteryCardPopupEl.hidden = false;
+    mysteryCardPlayerEl.textContent = `${player.name} drew`;
+    mysteryCardTitleEl.textContent = state.pendingCard.card.title;
+    mysteryCardTextEl.textContent = state.pendingCard.card.text;
   } else {
     pendingCardEl.hidden = true;
+    mysteryCardPopupEl.hidden = true;
   }
 
   if (state.pendingMove) {
@@ -1057,6 +1067,7 @@ function toggleRules() {
 spinButton.addEventListener("click", spin);
 reverseButton.addEventListener("click", useSavedReverse);
 playCardButton.addEventListener("click", playPendingCard);
+mysteryCardPopupEl.addEventListener("click", playPendingCard);
 playMoveButton.addEventListener("click", playPendingMove);
 powerUpButton.addEventListener("click", usePowerUp);
 powerDownButton.addEventListener("click", usePowerDown);
