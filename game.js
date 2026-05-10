@@ -147,6 +147,7 @@ function renderBoard() {
     const outerMid = growFromFace(track, mid, track.thickness);
     const outerEnd = growFromFace(track, end, track.thickness);
     const label = growFromFace(track, mid, track.labelOffset);
+    const occupiedLabel = clampPoint(growFromFace(track, mid, track.thickness + 34), 74, 926, 56, 636);
     const token = growFromFace(track, mid, tokenOffsetForAngle(track, mid));
     const tokenHostHeight = 76;
     const tokenHostYOffset = tokenYOffset(mid, tokenHostHeight);
@@ -172,6 +173,12 @@ function renderBoard() {
     text.setAttribute("y", label.y);
     appendSpaceLabel(text, space.label);
 
+    const occupiedText = createSvgElement("text");
+    occupiedText.classList.add("occupied-space-label");
+    occupiedText.setAttribute("x", occupiedLabel.x);
+    occupiedText.setAttribute("y", occupiedLabel.y);
+    appendSpaceLabel(occupiedText, space.label);
+
     const tokenHost = createSvgElement("foreignObject");
     tokenHost.classList.add("tokens-host");
     tokenHost.setAttribute("x", token.x - 43);
@@ -183,7 +190,7 @@ function renderBoard() {
     tokens.setAttribute("aria-hidden", "true");
     tokenHost.appendChild(tokens);
 
-    group.append(path, tokenHost, text);
+    group.append(path, text, tokenHost, occupiedText);
     svg.appendChild(group);
   });
 
@@ -321,6 +328,13 @@ function growFromFace(track, degrees, amount) {
   };
 }
 
+function clampPoint(point, minX, maxX, minY, maxY) {
+  return {
+    x: Math.min(maxX, Math.max(minX, point.x)),
+    y: Math.min(maxY, Math.max(minY, point.y))
+  };
+}
+
 function tokenYOffset(degrees, hostHeight) {
   const bottomness = Math.max(0, Math.sin(degrees * Math.PI / 180));
   return hostHeight / 2 + bottomness * 28;
@@ -370,12 +384,14 @@ function updateUi() {
 function updateSpaces(current) {
   document.querySelectorAll(".space").forEach((spaceEl) => {
     const index = Number(spaceEl.dataset.index);
-    const tokens = state.players
-      .filter((player) => player.position === index && !player.finished && state.phase === "race")
+    const occupyingPlayers = state.players
+      .filter((player) => player.position === index && !player.finished && state.phase === "race");
+    const tokens = occupyingPlayers
       .map((player) => playerTokenHtml(player, "token"))
       .join("");
     spaceEl.querySelector(".tokens").innerHTML = tokens;
     spaceEl.classList.toggle("active", state.phase === "race" && index === current.position && !current.finished);
+    spaceEl.classList.toggle("occupied", occupyingPlayers.length > 0 && Boolean(boardSpaces[index].label));
   });
 }
 
