@@ -147,7 +147,6 @@ function renderBoard() {
     const outerMid = growFromFace(track, mid, track.thickness);
     const outerEnd = growFromFace(track, end, track.thickness);
     const label = growFromFace(track, mid, track.labelOffset);
-    const occupiedLabel = clampPoint(growFromFace(track, mid, track.thickness + 34), 74, 926, 56, 636);
     const token = growFromFace(track, mid, tokenOffsetForAngle(track, mid));
     const tokenHostHeight = 76;
     const tokenHostYOffset = tokenYOffset(mid, tokenHostHeight);
@@ -173,12 +172,6 @@ function renderBoard() {
     text.setAttribute("y", label.y);
     appendSpaceLabel(text, space.label);
 
-    const occupiedText = createSvgElement("text");
-    occupiedText.classList.add("occupied-space-label");
-    occupiedText.setAttribute("x", occupiedLabel.x);
-    occupiedText.setAttribute("y", occupiedLabel.y);
-    appendSpaceLabel(occupiedText, space.label);
-
     const tokenHost = createSvgElement("foreignObject");
     tokenHost.classList.add("tokens-host");
     tokenHost.setAttribute("x", token.x - 43);
@@ -190,7 +183,7 @@ function renderBoard() {
     tokens.setAttribute("aria-hidden", "true");
     tokenHost.appendChild(tokens);
 
-    group.append(path, text, tokenHost, occupiedText);
+    group.append(path, text, tokenHost);
     svg.appendChild(group);
   });
 
@@ -328,13 +321,6 @@ function growFromFace(track, degrees, amount) {
   };
 }
 
-function clampPoint(point, minX, maxX, minY, maxY) {
-  return {
-    x: Math.min(maxX, Math.max(minX, point.x)),
-    y: Math.min(maxY, Math.max(minY, point.y))
-  };
-}
-
 function tokenYOffset(degrees, hostHeight) {
   const bottomness = Math.max(0, Math.sin(degrees * Math.PI / 180));
   return hostHeight / 2 + bottomness * 28;
@@ -391,7 +377,6 @@ function updateSpaces(current) {
       .join("");
     spaceEl.querySelector(".tokens").innerHTML = tokens;
     spaceEl.classList.toggle("active", state.phase === "race" && index === current.position && !current.finished);
-    spaceEl.classList.toggle("occupied", occupyingPlayers.length > 0 && Boolean(boardSpaces[index].label));
   });
 }
 
@@ -465,15 +450,21 @@ function updatePendingActions() {
   if (state.pendingMove) {
     pendingMoveEl.hidden = false;
     pendingMoveTitleEl.textContent = state.pendingMove.label;
-    playMoveButton.textContent = moveButtonLabel(state.pendingMove.amount);
+    playMoveButton.textContent = actionButtonLabel(state.pendingMove);
   } else {
     pendingMoveEl.hidden = true;
   }
 }
 
-function moveButtonLabel(amount) {
-  if (amount < 0) return `Move back ${Math.abs(amount)}`;
-  return `Move ${amount}`;
+function actionButtonLabel(action) {
+  if (action.kind === "move") {
+    if (action.amount < 0) return `Move back ${Math.abs(action.amount)}`;
+    return `Move ${action.amount}`;
+  }
+  if (action.kind === "points") return action.label.replace(/\n/g, " ");
+  if (action.kind === "mystery") return "Draw mystery card";
+  if (action.kind === "spinAgain") return "Spin again";
+  return action.label.replace(/\n/g, " ");
 }
 
 function updatePowerButtons() {
@@ -730,31 +721,40 @@ async function resolveSpace(game, player) {
   if (player.finished || game.over) return false;
   const space = boardSpaces[player.position];
 
-  if (space.points) addPoints(game, player.team, space.points);
-  if (space.skipNext) {
-    const next = nextLivingPlayer(game);
-    next.skip = true;
-    addLog(`${next.name} will skip a turn.`);
-  }
-  if (space.switchPlaces) switchPlacesWithLeader(game, player);
   if (space.move) {
-    game.pendingMove = {
-      playerId: player.id,
-      amount: space.move,
-      label: space.label
-    };
-    addLog(`${player.name} landed on ${space.label}.`);
-    updateUi();
-    return true;
+    return queueSpaceAction(game, player, { kind: "move", amount: space.move, label: space.label });
   }
-  if (isMysterySpace(space)) return await drawMystery(game, player);
+  if (space.points) {
+    return queueSpaceAction(game, player, {
+      kind: "points",
+      points: space.points,
+      spinAgain: Boolean(space.spinAgain),
+      label: space.label
+    });
+  }
+  if (isMysterySpace(space)) {
+    return queueSpaceAction(game, player, { kind: "mystery", label: space.label });
+  }
   if (space.spinAgain && !game.over) {
-    addLog(`${player.name} gets an extra spin.`);
-    game.busy = false;
-    updateUi();
-    return true;
+    return queueSpaceAction(game, player, { kind: "spinAgain", label: space.label });
+  }
+  if (space.skipNext) {
+    return queueSpaceAction(game, player, { kind: "skipNext", label: space.label });
+  }
+  if (space.switchPlaces) {
+    return queueSpaceAction(game, player, { kind: "switchPlaces", label: space.label });
   }
   return false;
+}
+
+function queueSpaceAction(game, player, action) {
+  game.pendingMove = {
+    playerId: player.id,
+    ...action
+  };
+  addLog(`${player.name} landed on ${action.label.replace(/\n/g, " ")}.`);
+  updateUi();
+  return true;
 }
 
 function isMysterySpace(space) {
@@ -803,10 +803,49 @@ async function playPendingMove() {
   const player = state.players[pending.playerId];
   state.pendingMove = null;
   const startingPosition = player.position;
-  addLog(`${pending.label}.`);
+  addLog(`${pending.label.replace(/\n/g, " ")}.`);
   updateUi();
-  await movePlayer(state, player, pending.amount, "space");
-  await finishPendingAction(player, startingPosition);
+  if (pending.kind === "move") {
+    await movePlayer(state, player, pending.amount, "space");
+    await finishPendingAction(player, startingPosition);
+    return;
+  }
+  if (pending.kind === "points") {
+    addPoints(state, player.team, pending.points);
+    if (pending.spinAgain && !state.over) {
+      grantExtraSpin(player);
+      return;
+    }
+    await finishPendingAction(player, null);
+    return;
+  }
+  if (pending.kind === "mystery") {
+    const drewCard = await drawMystery(state, player);
+    if (drewCard || hasPendingAction()) return;
+    await finishPendingAction(player, null);
+    return;
+  }
+  if (pending.kind === "spinAgain") {
+    grantExtraSpin(player);
+    return;
+  }
+  if (pending.kind === "skipNext") {
+    const next = nextLivingPlayer(state);
+    next.skip = true;
+    addLog(`${next.name} will skip a turn.`);
+    await finishPendingAction(player, null);
+    return;
+  }
+  if (pending.kind === "switchPlaces") {
+    switchPlacesWithLeader(state, player);
+  }
+  await finishPendingAction(player, null);
+}
+
+function grantExtraSpin(player) {
+  addLog(`${player.name} gets an extra spin.`);
+  state.busy = false;
+  updateUi();
 }
 
 async function finishPendingAction(player, startingPosition) {

@@ -230,24 +230,6 @@ select {
   vector-effect: non-scaling-stroke;
 }
 
-.occupied-space-label {
-  display: none;
-  fill: var(--ink);
-  font-size: 11px;
-  font-weight: 900;
-  text-anchor: middle;
-  dominant-baseline: middle;
-  paint-order: stroke;
-  stroke: rgba(255, 250, 241, 0.96);
-  stroke-width: 7;
-  vector-effect: non-scaling-stroke;
-  pointer-events: none;
-}
-
-.space.occupied .occupied-space-label {
-  display: block;
-}
-
 .tokens-host {
   overflow: visible;
 }
