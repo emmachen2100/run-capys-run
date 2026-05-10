@@ -688,7 +688,10 @@ function updatePendingActions() {
     pendingCardTitleEl.textContent = state.pendingCard.card.title;
     pendingCardTextEl.textContent = state.pendingCard.card.text;
     mysteryCardPopupEl.hidden = false;
-    mysteryCardPlayerEl.textContent = `${player.name} drew`;
+    mysteryCardPlayerEl.innerHTML = `
+      ${playerTokenHtml(player, "mystery-popup-token")}
+      <span>${player.name} drew</span>
+    `;
     mysteryCardTitleEl.textContent = state.pendingCard.card.title;
     mysteryCardTextEl.textContent = state.pendingCard.card.text;
   } else {
