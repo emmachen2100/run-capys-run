@@ -383,8 +383,10 @@ function updateUi() {
   turnHelpEl.textContent = setup ? setupHelpText() : "Move counter-clockwise around the capybara. Use powers before you spin.";
   spinButton.textContent = setup ? "Spin for teams" : "Spin";
   spinButton.disabled = state.busy || state.over;
-  spinnerEl.classList.toggle("is-disabled", state.busy || state.over);
-  spinnerEl.setAttribute("aria-disabled", String(state.busy || state.over));
+  const canSpin = !state.busy && !state.over && !hasPendingAction();
+  spinnerEl.classList.toggle("is-disabled", !canSpin);
+  spinnerEl.classList.toggle("is-spin-ready", canSpin);
+  spinnerEl.setAttribute("aria-disabled", String(!canSpin));
   spinnerEl.setAttribute("aria-label", setup ? "Spin for teams" : "Spin");
   const reversePlayer = savedReverseResponder();
   reverseButton.textContent = reversePlayer ? `Use ${reversePlayer.name}'s reverse` : "Use saved reverse";
