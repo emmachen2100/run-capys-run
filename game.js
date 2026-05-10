@@ -147,7 +147,7 @@ function renderBoard() {
     const outerMid = growFromFace(track, mid, track.thickness);
     const outerEnd = growFromFace(track, end, track.thickness);
     const label = growFromFace(track, mid, track.labelOffset);
-    const token = spaceCenterPoint(innerStart, innerEnd, outerStart, outerEnd);
+    const token = spaceTokenPoint(innerStart, innerEnd, outerStart, outerEnd);
     const tokenHostHeight = 76;
     const tokenHostYOffset = tokenHostHeight / 2;
     const type = space.type === "save-reverse" ? "reverse save-reverse" : space.type;
@@ -329,10 +329,12 @@ function growFromFace(track, degrees, amount) {
   };
 }
 
-function spaceCenterPoint(innerStart, innerEnd, outerStart, outerEnd) {
+function spaceTokenPoint(innerStart, innerEnd, outerStart, outerEnd) {
+  const innerWeight = 0.86;
+  const outerWeight = 1 - innerWeight;
   return {
-    x: roundPoint((innerStart.x + innerEnd.x + outerStart.x + outerEnd.x) / 4),
-    y: roundPoint((innerStart.y + innerEnd.y + outerStart.y + outerEnd.y) / 4)
+    x: roundPoint(((innerStart.x + innerEnd.x) / 2) * innerWeight + ((outerStart.x + outerEnd.x) / 2) * outerWeight),
+    y: roundPoint(((innerStart.y + innerEnd.y) / 2) * innerWeight + ((outerStart.y + outerEnd.y) / 2) * outerWeight)
   };
 }
 
