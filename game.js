@@ -408,6 +408,9 @@ function updateSpaces(current) {
   document.querySelectorAll(".space").forEach((spaceEl) => {
     const index = Number(spaceEl.dataset.index);
     const actionable = isActionableSpace(index);
+    const active = state.phase === "race" && index === current.position && !current.finished;
+    const actionPlayer = actionable ? state.players[state.pendingMove.playerId] : current;
+    const actionTeam = (actionable || active) && actionPlayer ? actionPlayer.team : "";
     const space = boardSpaces[index];
     const occupyingPlayers = state.players
       .filter((player) => player.position === index && !player.finished && state.phase === "race");
@@ -416,8 +419,10 @@ function updateSpaces(current) {
     tokenLayer.replaceChildren(title, ...occupyingPlayers.map((player, playerIndex) => {
       return svgPlayerToken(player, playerIndex, occupyingPlayers.length);
     }));
-    spaceEl.classList.toggle("active", state.phase === "race" && index === current.position && !current.finished);
+    spaceEl.classList.toggle("active", active);
     spaceEl.classList.toggle("actionable", actionable);
+    spaceEl.classList.toggle("capys-action", actionTeam === "capys");
+    spaceEl.classList.toggle("pelicans-action", actionTeam === "pelicans");
     spaceEl.setAttribute("tabindex", actionable ? "0" : "-1");
     spaceEl.setAttribute("role", actionable ? "button" : "group");
     spaceEl.setAttribute("aria-label", actionable
