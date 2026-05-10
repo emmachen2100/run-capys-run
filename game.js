@@ -197,14 +197,14 @@ function buildTrackGeometry(mobile) {
   return {
     start: mobile ? 220 : 220,
     span: mobile ? -260 : -260,
-    center: mobile ? { x: 500, y: 382 } : { x: 500, y: 378 },
+    center: mobile ? { x: 500, y: 380 } : { x: 500, y: 365 },
     face: mobile
-      ? { cx: 500, cy: 392, rx: 392, ry: 166, sidePinch: 24 }
-      : { cx: 500, cy: 378, rx: 360, ry: 224, sidePinch: 0 },
-    faceTopY: mobile ? 278 : 168,
-    thickness: mobile ? 96 : 98,
-    labelOffset: mobile ? 54 : 55,
-    tokenOffset: mobile ? 73 : 74
+      ? { cx: 500, cy: 390, rx: 366, ry: 154, sidePinch: 22 }
+      : { cx: 500, cy: 365, rx: 338, ry: 205, sidePinch: 0 },
+    faceTopY: mobile ? 292 : 184,
+    thickness: mobile ? 118 : 125,
+    labelOffset: mobile ? 65 : 68,
+    tokenOffset: mobile ? 90 : 95
   };
 }
 
