@@ -23,6 +23,7 @@ local requestNewRound = remoteEvent("RequestNewRound")
 local requestSavedReverse = remoteEvent("RequestSavedReverse")
 local requestPlayCard = remoteEvent("RequestPlayCard")
 local requestDeclineReverse = remoteEvent("RequestDeclineReverse")
+local requestSpaceAction = remoteEvent("RequestSpaceAction")
 
 local boardModel
 local spaceParts = {}
@@ -274,11 +275,13 @@ local function publicState()
 		over = state.over,
 		logs = state.logs,
 		spinResult = state.spinResult,
+		spinCount = state.spinCount,
 		winner = state.winner,
 		boardSpaces = Config.BoardSpaces,
 		teamInfo = Config.Teams,
 		pendingCard = pendingCard,
 		pendingReverseChoice = state.pendingReverseChoice,
+		pendingSpace = state.pendingSpace,
 		deckLeft = #state.deck,
 	}
 end
@@ -498,11 +501,7 @@ local function completePendingCard(reversed)
 	end
 end
 
-resolveSpace = function(playerState)
-	if playerState.finished or state.over then
-		return false
-	end
-
+local function applySpace(playerState)
 	local space = Config.BoardSpaces[playerState.position]
 	if space.points then
 		addPoints(playerState.team, space.points)
@@ -544,6 +543,52 @@ resolveSpace = function(playerState)
 	end
 
 	return false
+end
+
+local function shouldPressSpace(space)
+	return space.points ~= nil
+		or space.saveReverse
+		or space.reverseNow
+		or space.skipNext
+		or space.switchPlaces
+		or space.move ~= nil
+		or space.spinAgain
+end
+
+resolveSpace = function(playerState)
+	if playerState.finished or state.over then
+		return false
+	end
+
+	local space = Config.BoardSpaces[playerState.position]
+	if space.type == "mystery" then
+		drawMystery(playerState, false)
+		return true
+	end
+
+	if shouldPressSpace(space) then
+		state.pendingSpace = {
+			playerId = playerState.id,
+			spaceIndex = playerState.position,
+			label = space.label,
+			spinAgain = space.spinAgain == true,
+		}
+		addLog(playerState.name .. " landed on " .. space.label .. ".")
+		broadcast()
+		return true
+	end
+
+	return false
+end
+
+local function applyPendingSpace(playerState)
+	local pending = state.pendingSpace
+	if not pending or not playerState or pending.playerId ~= playerState.id then
+		return false
+	end
+
+	state.pendingSpace = nil
+	return applySpace(playerState)
 end
 
 endTurn = function()
@@ -611,12 +656,14 @@ local function newRound()
 		queuedMysteryDraws = 0,
 		pendingCard = nil,
 		pendingReverseChoice = nil,
+		pendingSpace = nil,
 		busy = false,
 		over = false,
 		roundId = roundCounter,
 		winner = nil,
 		logs = {},
 		spinResult = nil,
+		spinCount = 0,
 	}
 
 	addLog("New game started. Spin to race around the capybara board.")
@@ -634,6 +681,18 @@ requestSpin.OnServerEvent:Connect(function(player)
 		return
 	end
 
+	if state.pendingSpace then
+		if not state.pendingSpace.spinAgain or state.pendingSpace.playerId ~= playerState.id then
+			return
+		end
+
+		applyPendingSpace(playerState)
+		if state.over or state.pendingCard or state.pendingReverseChoice then
+			broadcast()
+			return
+		end
+	end
+
 	if playerState.skip then
 		playerState.skip = false
 		addLog(playerState.name .. " skipped this turn.")
@@ -643,6 +702,7 @@ requestSpin.OnServerEvent:Connect(function(player)
 
 	state.busy = true
 	state.spinResult = math.random(1, 6)
+	state.spinCount += 1
 	local roundId = state.roundId
 	addLog(playerState.name .. " spun " .. state.spinResult .. ".")
 	broadcast()
@@ -661,6 +721,27 @@ requestSpin.OnServerEvent:Connect(function(player)
 			broadcast()
 		end
 	end)
+end)
+
+requestSpaceAction.OnServerEvent:Connect(function(player)
+	if not state or state.busy or state.over or state.pendingCard or state.pendingReverseChoice or not state.pendingSpace then
+		return
+	end
+
+	local playerState = state.players[state.pendingSpace.playerId]
+	if not playerState or playerState.userId ~= player.UserId then
+		return
+	end
+
+	local keepsTurn = applyPendingSpace(playerState)
+	if state.over or state.pendingCard or state.pendingReverseChoice then
+		broadcast()
+	elseif keepsTurn then
+		state.busy = false
+		broadcast()
+	else
+		endTurn()
+	end
 end)
 
 requestPlayCard.OnServerEvent:Connect(function(player)

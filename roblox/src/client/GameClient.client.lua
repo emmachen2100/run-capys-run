@@ -3,6 +3,7 @@
 do
 	local Players = game:GetService("Players")
 	local ReplicatedStorage = game:GetService("ReplicatedStorage")
+	local TweenService = game:GetService("TweenService")
 
 	local localPlayer = Players.LocalPlayer
 	local root = ReplicatedStorage:WaitForChild("RunCapysRun")
@@ -15,11 +16,14 @@ do
 	local requestSavedReverse = remotes:WaitForChild("RequestSavedReverse")
 	local requestPlayCard = remotes:WaitForChild("RequestPlayCard")
 	local requestDeclineReverse = remotes:WaitForChild("RequestDeclineReverse")
+	local requestSpaceAction = remotes:WaitForChild("RequestSpaceAction")
 
 	local currentState
 	local spaceButtons = {}
 	local scoreCards = {}
 	local useBoardArt = AssetConfig.BoardImage ~= nil and AssetConfig.BoardImage ~= ""
+	local spinnerRotation = 0
+	local lastSpinCount = 0
 
 	local colors = {
 		ink = Color3.fromRGB(28, 24, 21),
@@ -228,7 +232,7 @@ do
 	local spinner = create("TextButton", {
 		BackgroundColor3 = Color3.fromRGB(241, 163, 64),
 		Font = Enum.Font.FredokaOne,
-		Text = "Spin",
+		Text = "",
 		TextColor3 = colors.ink,
 		TextSize = 24,
 		AnchorPoint = Vector2.new(0.5, 0.5),
@@ -238,12 +242,59 @@ do
 		Parent = board,
 	})
 	corner(spinner, UDim.new(1, 0))
-	local spinnerStroke = stroke(spinner, 3)
-	if useBoardArt then
-		spinner.BackgroundTransparency = 1
-		spinner.TextTransparency = 1
-		spinnerStroke.Enabled = false
+	stroke(spinner, 3)
+
+	local spinnerWheel = create("Frame", {
+		Name = "SpinnerWheel",
+		BackgroundColor3 = Color3.fromRGB(241, 163, 64),
+		BorderSizePixel = 0,
+		Size = UDim2.fromScale(1, 1),
+		ZIndex = 6,
+		Parent = spinner,
+	})
+	corner(spinnerWheel, UDim.new(1, 0))
+
+	for lineIndex = 1, 3 do
+		create("Frame", {
+			BackgroundColor3 = colors.line,
+			BorderSizePixel = 0,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Rotation = (lineIndex - 1) * 60,
+			Size = UDim2.new(0, 3, 1, 0),
+			ZIndex = 7,
+			Parent = spinnerWheel,
+		})
 	end
+
+	for number = 1, 6 do
+		local angle = math.rad((number - 1) * 60 - 60)
+		create("TextLabel", {
+			BackgroundTransparency = 1,
+			Font = Enum.Font.FredokaOne,
+			Text = tostring(number),
+			TextColor3 = colors.ink,
+			TextSize = 20,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromOffset(70 + math.cos(angle) * 42, 70 + math.sin(angle) * 42),
+			Size = UDim2.fromOffset(26, 26),
+			ZIndex = 8,
+			Parent = spinnerWheel,
+		})
+	end
+
+	local spinnerPointer = create("TextLabel", {
+		BackgroundTransparency = 1,
+		Font = Enum.Font.FredokaOne,
+		Text = "v",
+		TextColor3 = colors.line,
+		TextSize = 30,
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.fromScale(0.5, 0.02),
+		Size = UDim2.fromOffset(28, 28),
+		ZIndex = 10,
+		Parent = spinner,
+	})
 
 	local spinnerPlayer = create("TextLabel", {
 		BackgroundColor3 = colors.paper,
@@ -254,7 +305,7 @@ do
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromOffset(54, 42),
-		ZIndex = 7,
+		ZIndex = 11,
 		Parent = spinner,
 	})
 	corner(spinnerPlayer, UDim.new(1, 0))
@@ -369,16 +420,20 @@ do
 		return playerState and playerState.userId == localPlayer.UserId
 	end
 
+	local function localPendingSpace()
+		local pending = currentState and currentState.pendingSpace
+		if not pending then
+			return false
+		end
+		local playerState = currentState.players[pending.playerId]
+		return playerState and playerState.userId == localPlayer.UserId
+	end
+
 	local function setButtonEnabled(button, enabled)
 		button.Active = enabled
 		button.AutoButtonColor = enabled
-		if useBoardArt and button == spinner then
-			button.TextTransparency = 1
-			button.BackgroundTransparency = 1
-		else
-			button.TextTransparency = enabled and 0 or 0.45
-			button.BackgroundTransparency = enabled and 0 or 0.25
-		end
+		button.TextTransparency = enabled and 0 or 0.45
+		button.BackgroundTransparency = enabled and 0 or 0.25
 	end
 
 	local function tokenText(playerState)
@@ -444,7 +499,38 @@ do
 			if not useBoardArt then
 				stroke(button, 3)
 			end
+			button:SetAttribute("BaseX", label.X)
+			button:SetAttribute("BaseY", label.Y)
+			button:SetAttribute("RaiseX", growFromFace(midDegrees, track.labelOffset + 24).X)
+			button:SetAttribute("RaiseY", growFromFace(midDegrees, track.labelOffset + 24).Y)
+			button.MouseButton1Click:Connect(function()
+				local pending = currentState and currentState.pendingSpace
+				if pending and pending.spaceIndex == index and localPendingSpace() then
+					requestSpaceAction:FireServer()
+				end
+			end)
 			spaceButtons[index] = button
+		end
+	end
+
+	local function renderSpaces()
+		if not currentState then
+			return
+		end
+
+		local pending = currentState.pendingSpace
+		for index, button in pairs(spaceButtons) do
+			local space = currentState.boardSpaces[index]
+			local raised = pending and pending.spaceIndex == index
+			button.Text = (useBoardArt and not raised) and "" or space.label
+			button.BackgroundTransparency = (useBoardArt and not raised) and 1 or 0
+			button.AutoButtonColor = raised
+			button.Active = raised
+			button.ZIndex = raised and 12 or 2
+			button.Size = raised and UDim2.fromOffset(98, 68) or UDim2.fromOffset(86, 60)
+			button.Position = raised
+				and UDim2.fromOffset(button:GetAttribute("RaiseX"), button:GetAttribute("RaiseY"))
+				or UDim2.fromOffset(button:GetAttribute("BaseX"), button:GetAttribute("BaseY"))
 		end
 	end
 
@@ -587,6 +673,19 @@ do
 		end
 	end
 
+	local function animateSpinnerIfNeeded()
+		if not currentState.spinResult or not currentState.spinCount or currentState.spinCount == lastSpinCount then
+			return
+		end
+
+		lastSpinCount = currentState.spinCount
+		local resultOffset = (6 - currentState.spinResult) * 60
+		spinnerRotation = (math.floor(spinnerRotation / 360) + 2) * 360 + resultOffset
+		TweenService:Create(spinnerWheel, TweenInfo.new(0.75, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Rotation = spinnerRotation,
+		}):Play()
+	end
+
 	local function render()
 		if not currentState then
 			return
@@ -596,26 +695,36 @@ do
 		end
 		local current = findCurrentPlayer()
 		local isLocalTurn = localTurn()
-		if currentState.winner then
-			spinner.Text = teamLabel(currentState.winner) .. " win!"
-		elseif currentState.pendingCard then
-			spinner.Text = "Card"
-		elseif currentState.spinResult then
-			spinner.Text = tostring(currentState.spinResult)
-		else
-			spinner.Text = "Spin"
-		end
+		spinner.Text = ""
 		spinnerPlayer.Text = current and tokenText(current) or ""
-		local canSpin = isLocalTurn and not currentState.busy and not currentState.over and not currentState.pendingCard and not currentState.pendingReverseChoice
+		local pendingSpace = currentState.pendingSpace
+		local spinAgainReady = pendingSpace and pendingSpace.spinAgain and localPendingSpace()
+		local canSpin = isLocalTurn
+			and not currentState.busy
+			and not currentState.over
+			and not currentState.pendingCard
+			and not currentState.pendingReverseChoice
+			and (not pendingSpace or spinAgainReady)
 		setButtonEnabled(spinner, canSpin)
+		animateSpinnerIfNeeded()
 		mysteryEarLabel.Text = string.format("Mystery cards\n?\n%d left", currentState.deckLeft or 0)
+		renderSpaces()
 		renderTokens()
 		renderScoreCards()
 		renderCardPopup()
 	end
 
 	spinner.MouseButton1Click:Connect(function()
-		if localTurn() and currentState and not currentState.busy and not currentState.over and not currentState.pendingCard then
+		local pendingSpace = currentState and currentState.pendingSpace
+		local spinAgainReady = pendingSpace and pendingSpace.spinAgain and localPendingSpace()
+		if localTurn()
+			and currentState
+			and not currentState.busy
+			and not currentState.over
+			and not currentState.pendingCard
+			and not currentState.pendingReverseChoice
+			and (not pendingSpace or spinAgainReady)
+		then
 			requestSpin:FireServer()
 		end
 	end)
