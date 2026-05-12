@@ -159,6 +159,7 @@ function createGame() {
       pelicans: { score: 0, spentPowers: 0 }
     },
     turn: 0,
+    turnOrder: [],
     direction: 1,
     deck: shuffle(cardBlueprints),
     usedCards: [],
@@ -852,12 +853,47 @@ function setupHelpText() {
 }
 
 function nextLivingPlayer(game = state) {
-  let index = game.turn;
-  for (let step = 0; step < game.players.length; step += 1) {
-    index = wrap(index + game.direction, game.players.length);
-    if (!game.players[index].finished) return game.players[index];
+  return game.players[nextTurnIndex(game, game.turn)] || currentPlayer();
+}
+
+function buildTurnOrder(startIndex) {
+  if (state.players.length !== 4) {
+    return state.players.map((player) => player.id);
   }
-  return currentPlayer();
+
+  const starter = state.players[startIndex];
+  const starterTeam = state.players.filter((player) => player.team === starter.team);
+  const otherTeam = state.players.filter((player) => player.team !== starter.team);
+  const starterTeamOrder = rotatePlayers(starterTeam, starter.id);
+
+  return [
+    starterTeamOrder[0]?.id,
+    otherTeam[0]?.id,
+    starterTeamOrder[1]?.id,
+    otherTeam[1]?.id
+  ].filter((id) => id !== undefined);
+}
+
+function rotatePlayers(players, firstId) {
+  const start = Math.max(0, players.findIndex((player) => player.id === firstId));
+  return players.slice(start).concat(players.slice(0, start));
+}
+
+function activeTurnOrder(game = state) {
+  return game.turnOrder?.length ? game.turnOrder : game.players.map((player) => player.id);
+}
+
+function nextTurnIndex(game = state, fromIndex = game.turn) {
+  const order = activeTurnOrder(game);
+  let orderIndex = order.indexOf(fromIndex);
+  if (orderIndex === -1) orderIndex = 0;
+
+  for (let step = 1; step <= order.length; step += 1) {
+    const candidateIndex = order[wrap(orderIndex + game.direction * step, order.length)];
+    if (!game.players[candidateIndex].finished) return candidateIndex;
+  }
+
+  return fromIndex;
 }
 
 function teamLabel(team) {
@@ -1023,6 +1059,7 @@ function finishTeamPicker() {
 
   state.phase = "race";
   state.turn = state.players.findIndex((player) => player.team === "capys");
+  state.turnOrder = buildTurnOrder(state.turn);
   addLog("The Capys team starts. Move counter-clockwise.");
 }
 
@@ -1229,8 +1266,12 @@ function nextSavedReverseResponder(pending) {
   const cardPlayer = state.players[pending.playerId];
   if (!cardPlayer) return null;
 
-  for (let step = 1; step <= state.players.length; step += 1) {
-    const player = state.players[wrap(cardPlayer.id + state.direction * step, state.players.length)];
+  const order = activeTurnOrder(state);
+  let orderIndex = order.indexOf(cardPlayer.id);
+  if (orderIndex === -1) orderIndex = 0;
+
+  for (let step = 1; step <= order.length; step += 1) {
+    const player = state.players[order[wrap(orderIndex + state.direction * step, order.length)]];
     if (player.team !== cardPlayer.team && player.savedReverse && !player.finished) return player;
   }
 
@@ -1503,10 +1544,7 @@ function endTurn() {
     return;
   }
 
-  for (let steps = 0; steps < state.players.length; steps += 1) {
-    state.turn = wrap(state.turn + state.direction, state.players.length);
-    if (!currentPlayer().finished) break;
-  }
+  state.turn = nextTurnIndex(state, state.turn);
   updateUi();
 }
 
